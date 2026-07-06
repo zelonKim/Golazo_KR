@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import (
     EventDetailView,
-    PeopleMemoDetailView,
-    PeopleMemoView,
+    DateMemoDetailView,
+    DateMemoView,
     RecipientDetailView,
     RecipientView,
     EventView,
@@ -49,10 +49,10 @@ urlpatterns = [
         name="recommended-product_delete",
     ),
     # 4. 지인 기념일 메모 CRUD
-    path("people-memo/", PeopleMemoView.as_view(), name="people-memo_list_create"),
+    path("people-memo/", DateMemoView.as_view(), name="people-memo_list_create"),
     path(
         "people-memo/<int:memo_id>/",
-        PeopleMemoDetailView.as_view(),
+        DateMemoDetailView.as_view(),
         name="people-memo_read_update_delete",
     ),
 ]

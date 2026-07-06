@@ -52,7 +52,7 @@ class Recipient(models.Model):
         related_name="recipients",
         verbose_name="접속한 유저",
     )
-    
+
     name = models.CharField(max_length=50, verbose_name="상대 이름")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="성별")
     age_group = models.CharField(
@@ -170,20 +170,19 @@ class RecommendedProduct(models.Model):
 ##########################
 
 
-class PeopleMemo(models.Model):
+class DateMemo(models.Model):  # 💡 DateMemo -> DateMemo 로 변경
     """홈 탭 대시보드에서 이름과 기념일만 빠르게 메모하는 인맥 관리 테이블"""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="memo_people",
+        related_name="memo_dates",  # 💡 related_name도 맞춰서 변경해 주면 유용합니다!
         verbose_name="등록한 유저",
     )
 
-    name = models.CharField(max_length=100, verbose_name="이름")
+    content = models.CharField(max_length=100, verbose_name="내용")
     target_date = models.DateField(verbose_name="기념일 날짜")
 
-    # 매년 반복되는 알림 관리를 위해 연도 저장 방식으로 변경 (0이면 미발송)
     last_alarm_sent_year = models.IntegerField(
         default=0, verbose_name="마지막으로 알림을 보낸 연도"
     )
@@ -192,4 +191,4 @@ class PeopleMemo(models.Model):
         ordering = ["target_date"]
 
     def __str__(self):
-        return f"{self.user.username}의 메모: {self.name} ({self.target_date})"
+        return f"{self.user.username}의 기념일 메모: {self.name} ({self.target_date})"

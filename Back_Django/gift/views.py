@@ -16,9 +16,9 @@ from .serializers import RecipientSerializer, EventSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ParseError, PermissionDenied
 from .utils import get_coupang_product
-from .serializers import PeopleMemoSerializer
+from .serializers import DateMemoSerializer
 from datetime import date
-from .models import PeopleMemo
+from .models import DateMemo
 
 
 class RecipientView(APIView):
@@ -378,20 +378,20 @@ class RecommendedProductDetailView(APIView):
 #################################################################
 
 
-class PeopleMemoView(APIView):
+class DateMemoView(APIView):
     permission_classes = [IsAuthenticated]
 
     #  지인 메모 목록 조회 (+ 실시간 D-Day 계산)
     def get(self, request):
         login_user = request.user
         # 다가오는 기념일 날짜 순서대로 정렬해서 긁어오기
-        memos = PeopleMemo.objects.filter(user=login_user).order_by("target_date")
+        memos = DateMemo.objects.filter(user=login_user).order_by("target_date")
 
         today = date.today()
         response_data = []
 
         for memo in memos:
-            serializer = PeopleMemoSerializer(memo)
+            serializer = DateMemoSerializer(memo)
             memo_dict = serializer.data
 
             try:
@@ -412,7 +412,7 @@ class PeopleMemoView(APIView):
     # 지인 메모 신규 등록
     def post(self, request):
         login_user = request.user
-        serializer = PeopleMemoSerializer(data=request.data)
+        serializer = DateMemoSerializer(data=request.data)
 
         if serializer.is_valid():
             memo = serializer.save(user=login_user)
@@ -430,18 +430,18 @@ class PeopleMemoView(APIView):
 ##################################################################
 
 
-class PeopleMemoDetailView(APIView):
+class DateMemoDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     # 특정 메모 단건 상세 조회 (+ D-Day 계산)
     def get(self, request, memo_id):
-        memo = get_object_or_404(PeopleMemo, id=memo_id)
+        memo = get_object_or_404(DateMemo, id=memo_id)
 
         # [철벽 방어] 내 메모가 맞는지 검증
         if memo.user != request.user:
             raise PermissionDenied("해당 메모를 조회할 권한이 없습니다.")
 
-        serializer = PeopleMemoSerializer(memo)
+        serializer = DateMemoSerializer(memo)
         memo_dict = serializer.data
 
         # 실시간 D-Day 계산 주입
@@ -458,13 +458,13 @@ class PeopleMemoDetailView(APIView):
 
     # 특정 메모 부분 수정
     def patch(self, request, memo_id):
-        memo = get_object_or_404(PeopleMemo, id=memo_id)
+        memo = get_object_or_404(DateMemo, id=memo_id)
 
         if memo.user != request.user:
             raise PermissionDenied("해당 메모를 수정할 권한이 없습니다.")
 
         # partial=True로 이름이나 날짜 중 하나만 보내도 에러 없이 갱신 가능하게 세팅
-        serializer = PeopleMemoSerializer(memo, data=request.data, partial=True)
+        serializer = DateMemoSerializer(memo, data=request.data, partial=True)
 
         if serializer.is_valid():
             updated_memo = serializer.save()
@@ -479,7 +479,7 @@ class PeopleMemoDetailView(APIView):
 
     # 특정 메모 삭제
     def delete(self, request, memo_id):
-        memo = get_object_or_404(PeopleMemo, id=memo_id)
+        memo = get_object_or_404(DateMemo, id=memo_id)
 
         if memo.user != request.user:
             raise PermissionDenied("해당 메모를 삭제할 권한이 없습니다.")

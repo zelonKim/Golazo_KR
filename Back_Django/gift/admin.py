@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Recipient, Event, PeopleMemo, RecommendedProduct
+from .models import Recipient, Event, DateMemo, RecommendedProduct
 
 
 @admin.register(Recipient)
@@ -11,15 +11,15 @@ class RecipientAdmin(admin.ModelAdmin):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('id', 'recipient', 'purpose', 'min_budget', 'max_budget')
+    list_display = ("id", "recipient", "purpose", "min_budget", "max_budget")
     search_fields = ("recipient__name", "purpose")
     list_filter = ("purpose",)
 
 
-@admin.register(PeopleMemo)
-class PeopleMemoAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "name", "target_date", "last_alarm_sent_year")
-    search_fields = ("name", "user__email")
+@admin.register(DateMemo)
+class DateMemoAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "content", "target_date", "last_alarm_sent_year")
+    search_fields = ("content", "user__email")
     ordering = ("target_date",)
 
 
