@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import RecommendedProduct
 from .models import Recipient, Event
+from .models import PeopleMemo
 
 
 class RecipientSerializer(serializers.ModelSerializer):
@@ -68,3 +69,10 @@ class RecommendedProductSerializer(serializers.ModelSerializer):
 
 
 ###########################################
+
+
+class PeopleMemoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PeopleMemo
+        fields = ["id", "name", "target_date"]
+        read_only_fields = ["id"]

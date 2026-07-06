@@ -15,6 +15,13 @@ class User(AbstractUser):
         verbose_name="이메일 주소"
     )
     
+    nickname = models.CharField(
+        max_length=30, 
+        blank=True, 
+        null=True, 
+        verbose_name="닉네임"
+    )
+    
     social_provider = models.CharField(
         max_length=20, 
         choices=PROVIDER_CHOICES, 

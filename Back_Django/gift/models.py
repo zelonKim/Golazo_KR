@@ -52,6 +52,7 @@ class Recipient(models.Model):
         related_name="recipients",
         verbose_name="접속한 유저",
     )
+    
     name = models.CharField(max_length=50, verbose_name="상대 이름")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="성별")
     age_group = models.CharField(
