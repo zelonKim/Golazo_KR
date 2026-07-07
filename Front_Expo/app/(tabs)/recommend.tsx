@@ -1,39 +1,113 @@
-import { Coins, Heart, Smile, Sparkles } from "lucide-react-native";
+import { client } from "@/api/client";
+import { useTheme } from "@react-navigation/native";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
+import { User, UserPlus } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Dimensions,
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width } = Dimensions.get("window");
+interface Recipient {
+  id: number;
+  name: string;
+}
 
-// 💡 장고 AI 프롬프트 연동을 위한 옵션 리스트 정의
-const TARGETS = ["연인 💖", "부모님 🏡", "친구 🤝", "직장동료 ☕"];
-const BUDGETS = ["3만원 이하", "3~5만원", "5~10만원", "10만원 이상 🔥"];
-const MOODS = ["감동적인 🥹", "실용적인 🛠️", "센스있는 😎", "귀여운 🧸"];
+const PURPOSE_LIST = [
+  { code: "FRIEND_BDAY", label: "🎂 친구 생일" },
+  { code: "LOVER_BDAY", label: "❤️ 애인 생일" },
+  { code: "PARENTS_BDAY", label: "💐 부모님 생신" },
+  { code: "COUPLE_ANNIV", label: "👩‍❤️‍👨 커플 기념일" },
+  { code: "WED_ANNIV", label: "💍 결혼 기념일" },
+  { code: "GRADUATE", label: "🎓 졸업" },
+  { code: "EMPLOY", label: "💼 취업" },
+  { code: "HOUSE", label: "🏠 집들이" },
+  { code: "BIRTH", label: "👶 출산" },
+  { code: "SELF_GIFT", label: "🎁 나에게 선물" },
+];
 
 export default function RecommendScreen() {
-  // 유저가 선택한 값을 담을 상태(State) - 나중에 장고 API로 쏠 데이터들!
-  const [selectedTarget, setSelectedTarget] = useState("");
-  const [selectedBudget, setSelectedBudget] = useState("");
-  const [selectedMood, setSelectedMood] = useState("");
+  const { colors } = useTheme();
 
-  const handleStartAI = () => {
-    if (!selectedTarget || !selectedBudget || !selectedMood) {
-      alert("모든 조건을 톡톡 골라주세요! 🎀");
+  // 📝 입력 폼 상태 관리
+  const [selectedRecipientId, setSelectedRecipientId] = useState<number | null>(
+    null,
+  );
+  const [eventPurpose, setEventPurpose] = useState("");
+  const [minBudget, setMinBudget] = useState("");
+  const [maxBudget, setMaxBudget] = useState("");
+
+  // 🔍 1. useQuery: 내 지인 리스트 가져오기
+  const { data: recipients = [] } = useQuery<Recipient[]>({
+    queryKey: ["recipients"],
+    queryFn: async () => {
+      const response = await client.get("gift/recipient/");
+      return response.data;
+    },
+  });
+
+  // 🚀 2. useMutation: 지인에게 새로운 이벤트 생성하기
+  const createEventMutation = useMutation({
+    mutationFn: async (newEventData: {
+      purpose: string;
+      min_budget: number;
+      max_budget: number;
+    }) => {
+      if (!selectedRecipientId) throw new Error("지인을 선택해야 합니다.");
+      const response = await client.post(
+        `gift/recipient/${selectedRecipientId}/event/`,
+        newEventData,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const serverEventId =
+        data.event_id || data.id || (data.event && data.event.id);
+
+      if (!serverEventId) {
+        Alert.alert("오류 😢", "이벤트 생성 실패");
+        return;
+      }
+
+      // 폼 리셋
+      setEventPurpose("");
+      setMinBudget("");
+      setMaxBudget("");
+      setSelectedRecipientId(null);
+
+      // 🎉 [핵심 변경] 등록 완료 후 결과 페이지로 event_id를 넘기며 자동 이동!
+      router.push({
+        pathname: "/recommendResult",
+        params: { event_id: serverEventId },
+      });
+    },
+    onError: (error: any) => {
+      console.error("이벤트 등록 실패:", error.response?.data);
+      Alert.alert("등록 실패 🥲", "입력 내용을 다시 한번 확인해 주세요.");
+    },
+  });
+
+  const handleCreateEvent = () => {
+    if (!selectedRecipientId || !eventPurpose || !minBudget || !maxBudget) {
+      Alert.alert(
+        "알림 🎀",
+        "상대방과 선물 목적, 예산 범위를 모두 입력해 주세요!",
+      );
       return;
     }
-    console.log("장고 AI 추천 API 호출 데이터:", {
-      target: selectedTarget,
-      budget: selectedBudget,
-      mood: selectedMood,
+    createEventMutation.mutate({
+      purpose: eventPurpose,
+      min_budget: Number(minBudget),
+      max_budget: Number(maxBudget),
     });
-    // 여기에 나중에 axios.post('/api/recommend/', { ... }) 가 들어갑니다!
   };
 
   return (
@@ -41,238 +115,249 @@ export default function RecommendScreen() {
       style={[styles.container, { backgroundColor: "#FFFBFB" }]}
       edges={["top"]}
     >
-      {/* 1. 상단 타이틀 */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>AI Recommend</Text>
+        <Text style={styles.logoText}>AI Recommend</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 🪄 상단 안내 요정 박스 */}
-        <View style={styles.wizardCard}>
-          <Text style={styles.wizardEmoji}>🪄</Text>
-          <Text style={styles.wizardText}>
-            누구에게 어떤 선물을 할지 곰곰이 고르면,{"\n"}
-            AI 마법사가 특별한 선물을 큐레이션 해줄게요!
+        <View style={styles.formContainer}>
+          <Text style={styles.mainTitle}>누구를 위한 선물인가요? ✨</Text>
+          <Text style={styles.mainSub}>
+            이벤트를 등록하고 AI 맞춤 추천을 받아보세요.
           </Text>
-        </View>
 
-        {/* 👥 Q1. 누구에게 선물하나요? */}
-        <View style={styles.questionSection}>
-          <View style={styles.questionTitleRow}>
-            <Heart size={18} color="#FF7096" fill="#FF7096" />
-            <Text style={styles.questionTitle}>누구에게 선물하나요?</Text>
-          </View>
-          <View style={styles.chipGrid}>
-            {TARGETS.map((target) => {
-              const isSelected = selectedTarget === target;
+          {/* 인풋 1: 누구에게 줄 선물인가요? */}
+          <Text style={styles.inputLabel}>선물 대상 선택</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.recipientSelector}
+          >
+            <TouchableOpacity
+              style={[
+                styles.recipientBadge,
+                {
+                  backgroundColor: "#FFF0F3",
+                  borderColor: "#FF7096",
+                  borderStyle: "dashed",
+                },
+              ]}
+              onPress={() => router.push("/(tabs)/recipient")}
+            >
+              <UserPlus size={13} color="#FF7096" style={{ marginRight: 4 }} />
+              <Text style={[styles.recipientBadgeText, { fontWeight: "900" }]}>
+                + 지인 추가
+              </Text>
+            </TouchableOpacity>
+
+            {recipients.map((r) => (
+              <TouchableOpacity
+                key={r.id}
+                style={[
+                  styles.recipientBadge,
+                  selectedRecipientId === r.id && styles.recipientBadgeSelected,
+                ]}
+                onPress={() => setSelectedRecipientId(r.id)}
+              >
+                <User
+                  size={12}
+                  color={selectedRecipientId === r.id ? "white" : "#FF7096"}
+                  style={{ marginRight: 4 }}
+                />
+                <Text
+                  style={[
+                    styles.recipientBadgeText,
+                    selectedRecipientId === r.id && { color: "white" },
+                  ]}
+                >
+                  {r.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* 🎁 인풋 2: 선물 목적 */}
+          <Text style={styles.inputLabel}>선물 목적</Text>
+          <View style={styles.gridContainer}>
+            {PURPOSE_LIST.map((item) => {
+              const isSelected = eventPurpose === item.code;
               return (
                 <TouchableOpacity
-                  key={target}
-                  style={[styles.chip, isSelected && styles.selectedChip]}
-                  onPress={() => setSelectedTarget(target)}
+                  key={item.code}
+                  style={[
+                    styles.purposeGridBadge,
+                    isSelected && styles.choiceBadgeSelected,
+                  ]}
+                  onPress={() => setEventPurpose(item.code)}
                 >
                   <Text
                     style={[
-                      styles.chipText,
-                      isSelected && styles.selectedChipText,
+                      styles.purposeGridBadgeText,
+                      isSelected && { color: "white" },
                     ]}
                   >
-                    {target}
+                    {item.label}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-        </View>
 
-        {/* 💵 Q2. 예산은 얼마인가요? */}
-        <View style={styles.questionSection}>
-          <View style={styles.questionTitleRow}>
-            <Coins size={18} color="#FF7096" />
-            <Text style={styles.questionTitle}>준비한 예산은 얼마인가요?</Text>
+          {/* 인풋 3: 예산 범위 설정 */}
+          <Text style={styles.inputLabel}>예산 범위 설정 (원 단위)</Text>
+          <View style={styles.budgetRow}>
+            <View style={[styles.inputWrapper, { flex: 1 }]}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="최소 예산"
+                placeholderTextColor="#AEAEB2"
+                keyboardType="numeric"
+                value={minBudget}
+                onChangeText={setMinBudget}
+              />
+            </View>
+            <Text style={styles.budgetBetween}>~</Text>
+            <View style={[styles.inputWrapper, { flex: 1 }]}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="최대 예산"
+                placeholderTextColor="#AEAEB2"
+                keyboardType="numeric"
+                value={maxBudget}
+                onChangeText={setMaxBudget}
+              />
+            </View>
           </View>
-          <View style={styles.chipGrid}>
-            {BUDGETS.map((budget) => {
-              const isSelected = selectedBudget === budget;
-              return (
-                <TouchableOpacity
-                  key={budget}
-                  style={[styles.chip, isSelected && styles.selectedChip]}
-                  onPress={() => setSelectedBudget(budget)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.selectedChipText,
-                    ]}
-                  >
-                    {budget}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
 
-        {/* 🧸 Q3. 어떤 느낌의 선물을 원하나요? */}
-        <View style={styles.questionSection}>
-          <View style={styles.questionTitleRow}>
-            <Smile size={18} color="#FF7096" />
-            <Text style={styles.questionTitle}>
-              어떤 분위기의 선물이 좋을까요?
-            </Text>
-          </View>
-          <View style={styles.chipGrid}>
-            {MOODS.map((mood) => {
-              const isSelected = selectedMood === mood;
-              return (
-                <TouchableOpacity
-                  key={mood}
-                  style={[styles.chip, isSelected && styles.selectedChip]}
-                  onPress={() => setSelectedMood(mood)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.selectedChipText,
-                    ]}
-                  >
-                    {mood}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          {/* 등록하기 제출 버튼 */}
+          <TouchableOpacity
+            style={[
+              styles.modalSubmitButton,
+              createEventMutation.isPending && styles.disabledButton,
+            ]}
+            onPress={handleCreateEvent}
+            disabled={createEventMutation.isPending}
+          >
+            {createEventMutation.isPending ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.modalSubmitButtonText}>
+                이벤트 등록하고 선물 추천받기 🚀
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
-
-        {/* 🚀 대망의 AI 추천 시작하기 매직 버튼 */}
-        <TouchableOpacity style={styles.magicButton} onPress={handleStartAI}>
-          {/* <Gift size={20} color="#FFF" style={{ marginRight: 8 }} /> */}
-          <Text style={styles.magicButtonText}>AI에게 추천 부탁하기</Text>
-          <Sparkles size={16} color="#FFF" style={{ marginLeft: 4 }} />
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#FFF0F3",
   },
-  headerTitle: {
+  logoText: {
     fontSize: 22,
     fontWeight: "900",
     color: "#FF7096",
     fontStyle: "italic",
   },
-  scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  /* 🪄 마법사 카드 레이아웃 */
-  wizardCard: {
-    flexDirection: "row",
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  formContainer: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 28,
+    borderRadius: 32,
     padding: 20,
-    alignItems: "center",
-    marginBottom: 26,
-    borderWidth: 2,
-    borderColor: "#FFE3EB",
-    shadowColor: "#FFCCD8",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 3,
+    borderWidth: 1.5,
+    borderColor: "#FFF0F3",
   },
-  wizardEmoji: {
-    fontSize: 32,
-    marginRight: 14,
-  },
-  wizardText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#5C5C62",
-    lineHeight: 18,
-    flex: 1,
-  },
-  /* ❓ 설문 질문 섹션 */
-  questionSection: {
-    marginBottom: 26,
-  },
-  questionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-    paddingLeft: 4,
-  },
-  questionTitle: {
-    fontSize: 16,
+  mainTitle: {
+    fontSize: 20,
     fontWeight: "800",
     color: "#2D2D3A",
-    marginLeft: 8,
+    marginBottom: 6,
   },
-  /* 💊 동글동글 젤리 칩 칩 레이아웃 */
-  chipGrid: {
+  mainSub: { fontSize: 13, color: "#757580", marginBottom: 24 },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#757580",
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  inputWrapper: {
     flexDirection: "row",
-    flexWrap: "wrap", // 바둑판식 자동 줄바꿈 활성화
-    gap: 10,
-  },
-  chip: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20, // 홈화면 젤리 배지들과 통일
+    alignItems: "center",
+    backgroundColor: "#FFFBFB",
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#F6F6FA",
-    // 미세한 조약돌 섀도우
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingHorizontal: 16,
+    height: 52,
   },
-  selectedChip: {
-    backgroundColor: "#FFF0F3", // 선택되면 연핑크 무드로 반전
+  textInput: { flex: 1, fontSize: 14, fontWeight: "600", color: "#2D2D3A" },
+  recipientSelector: {
+    flexDirection: "row",
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  recipientBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF0F3",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 50,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#FFE3EB",
+  },
+  recipientBadgeSelected: {
+    backgroundColor: "#FF7096",
     borderColor: "#FF7096",
   },
-  chipText: {
-    fontSize: 14,
+  recipientBadgeText: { fontSize: 13, fontWeight: "700", color: "#FF7096" },
+  budgetRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  budgetBetween: {
+    marginHorizontal: 10,
+    fontSize: 16,
     fontWeight: "700",
-    color: "#5C5C62",
+    color: "#AEAEB2",
   },
-  selectedChipText: {
-    color: "#FF7096", // 선택된 글자는 딸기우유 컬러로 강조
-  },
-  /* 🎁 최종 매직 버튼 */
-  magicButton: {
+  modalSubmitButton: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#FF7096",
-    paddingVertical: 18,
-    borderRadius: 24, // 홈화면 메인 버튼과 완벽 동기화
-    marginTop: 14,
-    shadowColor: "#FFCCD8",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 4,
+    height: 54,
+    borderRadius: 20,
+    marginTop: 16,
   },
-  magicButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "800",
+  modalSubmitButtonText: { color: "#FFF", fontSize: 15, fontWeight: "800" },
+  disabledButton: { backgroundColor: "#FFAEC4" },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
+  purposeGridBadge: {
+    width: "48.5%",
+    backgroundColor: "#FFF0F3",
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#FFE3EB",
+  },
+  purposeGridBadgeText: { fontSize: 13, fontWeight: "700", color: "#FF7096" },
+  choiceBadgeSelected: { backgroundColor: "#FF7096", borderColor: "#FF7096" },
 });

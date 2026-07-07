@@ -23,28 +23,6 @@ class Recipient(models.Model):
         ("80", "80대 이상"),
     ]
 
-    MBTI_CHOICES = [
-        (mbti, mbti)
-        for mbti in [
-            "ISTJ",
-            "ISFJ",
-            "INFJ",
-            "INTJ",
-            "ISTP",
-            "ISFP",
-            "INFP",
-            "INTP",
-            "ESTP",
-            "ESFP",
-            "ENFP",
-            "ENTP",
-            "ESTJ",
-            "ESFJ",
-            "ENFJ",
-            "ENTJ",
-        ]
-    ]
-
     # 필수 정보
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -59,10 +37,7 @@ class Recipient(models.Model):
         max_length=2, choices=AGE_CHOICES, verbose_name="나이대"
     )
 
-    # 선택 정보
-    mbti = models.CharField(
-        max_length=4, choices=MBTI_CHOICES, blank=True, null=True, verbose_name="MBTI"
-    )
+    mbti = models.CharField(max_length=4, blank=True, null=True, verbose_name="MBTI")
 
     hobbies = models.CharField(
         max_length=255,
@@ -95,6 +70,7 @@ class Event(models.Model):
         ("EMPLOY", "취업"),
         ("HOUSE", "집들이"),
         ("BIRTH", "출산"),
+        ("SELF_GIFT", "나에게 선물"),
     ]
 
     recipient = models.ForeignKey(
@@ -105,7 +81,7 @@ class Event(models.Model):
     )
 
     purpose = models.CharField(
-        max_length=20, choices=PURPOSE_CHOICES, verbose_name="선물 목적"
+        max_length=50, choices=PURPOSE_CHOICES, verbose_name="선물 목적"
     )
 
     min_budget = models.PositiveIntegerField(verbose_name="최소 예산 (원)")

@@ -61,6 +61,7 @@ async def get_recommendation(request: RecommendRequest):
         # 3. OpenAI Chat Completion 호출 (Structured Outputs 적용)
         response = client.beta.chat.completions.parse(
             model="gpt-4o-mini",
+            temperature=0.8,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},

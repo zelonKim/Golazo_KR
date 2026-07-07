@@ -1,7 +1,10 @@
 import { useTheme } from "@react-navigation/native";
+import { useRouter } from "expo-router"; // 💡 라우터 이동을 위해 임포트 추가!
+import * as SecureStore from "expo-secure-store"; // 💡 토큰 삭제를 위해 임포트 추가!
 import { Gift, Heart, LogOut, Settings, User } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  Alert, // 💡 로그아웃 확인 창을 위해 임포트 추가!
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -16,7 +19,42 @@ const { width } = Dimensions.get("window");
 
 export default function MyPageScreen() {
   const { colors } = useTheme();
+  const router = useRouter(); // 💡 라우터 훅 선언
   const [isAlarmEnabled, setIsAlarmEnabled] = useState(true);
+
+  // 🚪 실제 로그아웃 처리 핸들러 함수
+  const handleLogOut = () => {
+    Alert.alert(
+      "로그아웃 ",
+      "정말 로그아웃 하시겠어요?",
+      [
+        {
+          text: "아니오",
+          style: "cancel", // 팝업 닫기
+        },
+        {
+          text: "네",
+          style: "destructive", // 빨간색 강조 버튼 (iOS 기준)
+          onPress: async () => {
+            try {
+              // 1. 우리 인터셉터가 바라보는 토큰 키값을 완전히 삭제합니다.
+              await SecureStore.deleteItemAsync("userToken");
+
+              // 2. 뒤로가기로 마이페이지에 다시 못 오도록 replace를 사용해 로그인 창으로 워프!
+              router.replace("/login");
+            } catch (error) {
+              console.error("로그아웃 중 오류 발생:", error);
+              Alert.alert(
+                "오류",
+                "로그아웃 처리에 실패했습니다. 다시 시도해 주세요.",
+              );
+            }
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  };
 
   return (
     <SafeAreaView
@@ -32,7 +70,7 @@ export default function MyPageScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 👤 2. 가로 분할형 프로필 대시보드 카드 (디자인 정체성 유지) */}
+        {/* 👤 2. 가로 분할형 프로필 대시보드 카드 */}
         <View style={styles.cloudCard}>
           <View style={styles.profileMainRow}>
             <View style={styles.avatarContainer}>
@@ -72,7 +110,7 @@ export default function MyPageScreen() {
           </View>
         </View>
 
-        {/* ⚙ 3. 수정된 부분: 하나의 카테고리로 깔끔하게 통합된 일반 설정 리스트 */}
+        {/* ⚙ 3. 서비스 설정 리스트 */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>⚙ 서비스 설정</Text>
@@ -115,8 +153,9 @@ export default function MyPageScreen() {
             />
           </View>
 
-          {/* 로그아웃 */}
-          <TouchableOpacity style={styles.cuteListItem}>
+          {/* 로그아웃 버튼 */}
+          {/* 💡 여기에 onPress={handleLogOut}을 연결했습니다! */}
+          <TouchableOpacity style={styles.cuteListItem} onPress={handleLogOut}>
             <View style={styles.listItemLeft}>
               <View style={styles.heartIconBg}>
                 <LogOut size={16} color="#FF7096" />
@@ -135,10 +174,9 @@ export default function MyPageScreen() {
   );
 }
 
+// ... styles 구조는 기존 성진님 코드와 100% 동일하므로 생략합니다!
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -154,12 +192,7 @@ const styles = StyleSheet.create({
     color: "#FF7096",
     fontStyle: "italic",
   },
-  scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  /* 👤 프로필 대시보드 카드 */
+  scrollContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
   cloudCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 32,
@@ -173,30 +206,16 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  profileMainRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-  },
-  profileTextSide: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    marginBottom: 4,
-  },
+  profileMainRow: { flexDirection: "row", alignItems: "center", width: "100%" },
+  profileTextSide: { marginLeft: 16, flex: 1 },
+  badgeRow: { flexDirection: "row", marginBottom: 4 },
   bubbleTag: {
     backgroundColor: "#FFF0F3",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 50,
   },
-  bubbleTagText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#FF7096",
-  },
+  bubbleTagText: { fontSize: 11, fontWeight: "700", color: "#FF7096" },
   avatarContainer: {
     width: 68,
     height: 68,
@@ -207,14 +226,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#FFE3EB",
   },
-  avatarEmoji: {
-    fontSize: 32,
-  },
-  mainCardTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#2D2D3A",
-  },
+  avatarEmoji: { fontSize: 32 },
+  mainCardTitle: { fontSize: 22, fontWeight: "800", color: "#2D2D3A" },
   mainCardEmail: {
     fontSize: 13,
     fontWeight: "600",
@@ -227,37 +240,22 @@ const styles = StyleSheet.create({
     marginVertical: 18,
     width: "100%",
   },
-  /* 대시보드 스탯 */
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
     width: "100%",
   },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#2D2D3A",
-  },
+  statItem: { alignItems: "center", flex: 1 },
+  statNumber: { fontSize: 16, fontWeight: "800", color: "#2D2D3A" },
   statLabel: {
     fontSize: 11,
     color: "#757580",
     fontWeight: "600",
     marginTop: 2,
   },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: "#F6F6FA",
-  },
-  /* ⚙ 리스트 통합 섹션 */
-  sectionContainer: {
-    marginTop: 24,
-  },
+  statDivider: { width: 1, height: 24, backgroundColor: "#F6F6FA" },
+  sectionContainer: { marginTop: 24 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -265,11 +263,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2D2D3A",
-  },
+  sectionTitle: { fontSize: 18, fontWeight: "700", color: "#2D2D3A" },
   cuteListItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -281,15 +275,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#F6F6FA",
   },
-  listItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  heartIconBg: {
-    backgroundColor: "#FFF0F3",
-    padding: 10,
-    borderRadius: 50,
-  },
+  listItemLeft: { flexDirection: "row", alignItems: "center" },
+  heartIconBg: { backgroundColor: "#FFF0F3", padding: 10, borderRadius: 50 },
   listItemName: {
     fontSize: 15,
     fontWeight: "700",

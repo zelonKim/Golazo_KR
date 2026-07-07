@@ -1,34 +1,148 @@
+import { client } from "@/api/client";
 import { useTheme } from "@react-navigation/native";
-import { Bell, Calendar, Plus } from "lucide-react-native"; // 💡 Plus 아이콘 추가!
-import React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import {
+  Bell,
+  CalendarDays,
+  Calendar as CalendarIcon,
+  Plus,
+  X,
+} from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Calendar, LocaleConfig } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// 📅 달력 한글화 글로벌 세팅
+LocaleConfig.locales["ko"] = {
+  monthNames: [
+    "1월",
+    "2월",
+    "3월",
+    "4월",
+    "5월",
+    "6월",
+    "7월",
+    "8월",
+    "9월",
+    "10월",
+    "11월",
+    "12월",
+  ],
+  monthNamesShort: [
+    "1월",
+    "2월",
+    "3월",
+    "4월",
+    "5월",
+    "6월",
+    "7월",
+    "8월",
+    "9월",
+    "10월",
+    "11월",
+    "12월",
+  ],
+  dayNames: [
+    "일요일",
+    "월요일",
+    "화요일",
+    "수요일",
+    "목요일",
+    "금요일",
+    "토요일",
+  ],
+  dayNamesShort: ["일", "월", "화", "수", "목", "금", "토"],
+  today: "오늘",
+};
+LocaleConfig.defaultLocale = "ko";
 
 const { width } = Dimensions.get("window");
 
-const UPCOMING_ANNIVERSARIES = [
-  { id: 1, content: " 여자친구 생일", date: "7월 24일", dDay: 18 },
-  { id: 2, content: " 부모님 결혼기념일", date: "8월 12일", dDay: 37 },
-  { id: 3, content: " 베프 이사 집들이", date: "9월 05일", dDay: 61 },
-];
+interface DateMemo {
+  id: number;
+  content: string;
+  target_date: string;
+  d_day: number | null;
+}
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const mainDDay = UPCOMING_ANNIVERSARIES[0];
+  const queryClient = useQueryClient();
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // 📝 모달 창 상태 및 인풋 필드 상태 관리
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+  const [memoContent, setMemoContent] = useState("");
+  const [memoDate, setMemoDate] = useState("");
+
+  // 🔍 1. useQuery: 장고 백엔드로부터 로그인한 유저의 기념일 리스트 가져오기
+  const {
+    data: anniversaries = [],
+    isLoading,
+    isError,
+  } = useQuery<DateMemo[]>({
+    queryKey: ["dateMemos"],
+    queryFn: async () => {
+      const response = await client.get("gift/date-memo/");
+      return response.data;
+    },
+  });
+
+  // 🚀 2. useMutation: 새로운 기념일 저장(POST)하기
+  const addMemoMutation = useMutation({
+    mutationFn: async (newMemo: { content: string; target_date: string }) => {
+      const response = await client.post("gift/date-memo/", newMemo);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dateMemos"] });
+      Alert.alert("저장 완료 🎁", "새로운 특별한 날이 메모함에 저장되었어요.");
+      setMemoContent("");
+      setMemoDate("");
+      setIsModalVisible(false);
+    },
+    onError: (error: any) => {
+      console.error("기념일 등록 실패:", error.response?.data);
+      Alert.alert("등록 실패", "입력 형식을 다시 한번 확인해 주세요.");
+    },
+  });
+
+  // 💾 등록하기 버튼 누를 때 검증 핸들러
+  const handleCreateMemo = () => {
+    if (!memoContent || !memoDate) {
+      Alert.alert("알림", "기념일과 날짜를 모두 입력해 주세요.");
+      return;
+    }
+    addMemoMutation.mutate({
+      content: memoContent,
+      target_date: memoDate,
+    });
+  };
+
+  // 👑 목록 중 d_day가 가장 가까운 메인 디데이 타겟 설정
+  const mainDDay = anniversaries.length > 0 ? anniversaries[0] : null;
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: "#FFFBFB" }]}
       edges={["top"]}
     >
-      {/* 1. 귀여운 상단 헤더 */}
+      {/* 1. 상단 헤더 */}
       <View style={styles.header}>
         <Text style={styles.logoText}>Special Day</Text>
         <TouchableOpacity style={styles.iconButton}>
@@ -36,66 +150,253 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 2. 몽글몽글 구름 모양의 메인 디데이 카드 */}
-        <View style={styles.cloudCard}>
-          <View style={styles.bubbleTag}>
-            <Text style={styles.bubbleTagText}>곧 다가오는 특별한 날</Text>
-          </View>
-
-          <Text style={styles.mainCardDDay}>
-            <Text style={{ color: "#FF7096" }}>D-{mainDDay.dDay}</Text>
-          </Text>
-          <Text style={styles.mainCardTitle}>{mainDDay.content}</Text>
-
-          <TouchableOpacity style={styles.cuteButton}>
-            <Text style={styles.cuteButtonText}>AI 맞춤 선물 추천받기</Text>
-            <Text> 🎁</Text>
-          </TouchableOpacity>
+      {/* 로딩 인디케이터 처리 */}
+      {isLoading ? (
+        <View style={styles.centerFlex}>
+          <ActivityIndicator size="large" color="#FF7096" />
+          <Text style={styles.loadingText}>특별한 날을 불러오는 중...</Text>
         </View>
+      ) : (
+        <ScrollView
+          /* 💡 [정중앙 배치 치트키] 데이터 유무에 따라 스크롤 뷰 컨테이너 스타일을 다르게 스위칭합니다! */
+          contentContainerStyle={
+            mainDDay ? styles.scrollContent : styles.centerScrollContent
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {mainDDay ? (
+            <>
+              {/* 데이터가 있을 때: 상단 카드 + 다가오는 목록 노출 */}
+              <View style={styles.cloudCard}>
+                <View style={styles.bubbleTag}>
+                  <Text style={styles.bubbleTagText}>
+                    곧 다가오는 특별한 날
+                  </Text>
+                </View>
 
-        {/* 4. 동글동글 아기자기한 기념일 리스트 */}
-        <View style={styles.sectionContainer}>
-          {/* 💡 수정된 부분: 타이틀과 플러스 버튼을 나란히 배치하는 헤더 구조 */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🎉 다가오는 특별한 날</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => console.log("기념일 추가 버튼 클릭됨!")} // 나중에 추가 모달 연동 자리!
+                <Text style={styles.mainCardDDay}>
+                  <Text style={{ color: "#FF7096" }}>
+                    {mainDDay.d_day === 0 ? "D-Day 🎉" : `D-${mainDDay.d_day}`}
+                  </Text>
+                </Text>
+                <Text style={styles.mainCardTitle}>{mainDDay.content}</Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(tabs)/recommend")}
+                  style={styles.cuteButton}
+                >
+                  <Text style={styles.cuteButtonText}>
+                    AI 맞춤 선물 추천받기
+                  </Text>
+                  <Text> 🎁</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>🎉 다가오는 특별한 날</Text>
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => setIsModalVisible(true)}
+                  >
+                    <Plus size={21} color="white" strokeWidth={3} />
+                  </TouchableOpacity>
+                </View>
+
+                {anniversaries.map((item) => (
+                  <TouchableOpacity key={item.id} style={styles.cuteListItem}>
+                    <View style={styles.listItemLeft}>
+                      <View style={styles.heartIconBg}>
+                        <CalendarIcon size={16} color="#FF7096" />
+                      </View>
+                      <View>
+                        <Text style={styles.listItemName}>{item.content}</Text>
+                        <Text style={styles.listItemDate}>
+                          {item.target_date}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.cuteDDayBadge}>
+                      <Text style={styles.cuteDDayText}>
+                        {item.d_day === 0 ? "D-Day" : `D-${item.d_day}`}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          ) : (
+            /* 💡 데이터가 없을 때: 불필요한 레이아웃을 걷어내고 정중앙 전용 가로폭 카드 배치 */
+            <View
+              style={[styles.cloudCard, { width: "100%", marginBottom: 0 }]}
             >
-              <Plus size={21} color="white" strokeWidth={3} />
+              <View style={styles.bubbleTag}>
+                <Text style={styles.bubbleTagText}>No Day</Text>
+              </View>
+              <Text style={styles.mainCardDDay}>
+                <Text style={{ color: "#FF7096" }}>
+                  아직 메모한 날이 없어요.
+                </Text>
+              </Text>
+              <Text
+                style={[
+                  styles.mainCardTitle,
+                  { fontSize: 14, color: "#AEAEB2", marginTop: 4 },
+                ]}
+              >
+                아래 버튼을 눌러 지인들의{"\n"}특별한 날을 메모해보세요!
+              </Text>
+              <TouchableOpacity
+                style={styles.cuteButton}
+                onPress={() => setIsModalVisible(true)}
+              >
+                <Text style={styles.cuteButtonText}>특별한 날 메모하기</Text>
+                <Text> 🗓️</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      )}
+
+      {/* 4. 기념일 등록 메인 모달 팝업 */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => {
+          setMemoContent("");
+          setMemoDate("");
+          setIsModalVisible(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalHeaderTitle}>특별한 날 메모하기 </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setMemoContent("");
+                  setMemoDate("");
+                }}
+              >
+                <X size={20} color="#AEAEB2" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.inputLabel}>어떤 날인가요?</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="예) 엄마 생일, 100일 기념일"
+                placeholderTextColor="#AEAEB2"
+                value={memoContent}
+                onChangeText={setMemoContent}
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>그 날은 언제인가요?</Text>
+            <TouchableOpacity
+              style={styles.inputWrapper}
+              onPress={() => setIsCalendarVisible(true)}
+            >
+              <Text
+                style={[
+                  styles.dateTextValue,
+                  !memoDate && { color: "#AEAEB2" },
+                ]}
+              >
+                {memoDate || (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <CalendarDays size={18} color={"#AEAEB2"} />
+                    <Text
+                      style={{
+                        color: "#AEAEB2",
+                        fontSize: 14,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {"  "}날짜를 선택해 주세요
+                    </Text>
+                  </View>
+                )}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.modalSubmitButton,
+                addMemoMutation.isPending && styles.disabledButton,
+              ]}
+              onPress={handleCreateMemo}
+              disabled={addMemoMutation.isPending}
+            >
+              {addMemoMutation.isPending ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.modalSubmitButtonText}>메모함에 저장하기</Text>
+              )}
             </TouchableOpacity>
           </View>
-
-          {UPCOMING_ANNIVERSARIES.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.cuteListItem}>
-              <View style={styles.listItemLeft}>
-                <View style={styles.heartIconBg}>
-                  <Calendar size={16} color="#FF7096" />
-                </View>
-                <View>
-                  <Text style={styles.listItemName}>{item.content}</Text>
-                  <Text style={styles.listItemDate}>{item.date}</Text>
-                </View>
-              </View>
-              <View style={styles.cuteDDayBadge}>
-                <Text style={styles.cuteDDayText}>D-{item.dDay}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
         </View>
-      </ScrollView>
+
+        {/* 📅 5. 중첩 모달: 하단에서 슬라이딩되는 몽글몽글 달력 픽커 */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isCalendarVisible}
+          onRequestClose={() => setIsCalendarVisible(false)}
+        >
+          <View style={styles.calendarModalOverlay}>
+            <View style={styles.calendarContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalHeaderTitle}>날짜 선택하기 🗓️</Text>
+                <TouchableOpacity onPress={() => setIsCalendarVisible(false)}>
+                  <X size={20} color="#AEAEB2" />
+                </TouchableOpacity>
+              </View>
+
+              <Calendar
+                current={memoDate || undefined}
+                minDate={todayStr}
+                onDayPress={(day) => {
+                  setMemoDate(day.dateString);
+                  setIsCalendarVisible(false);
+                }}
+                markedDates={{
+                  [memoDate]: {
+                    selected: true,
+                    disableTouchEvent: true,
+                    selectedColor: "#FF7096",
+                  },
+                }}
+                theme={{
+                  backgroundColor: "#ffffff",
+                  calendarBackground: "#ffffff",
+                  textSectionTitleColor: "#757580",
+                  selectedDayBackgroundColor: "#FF7096",
+                  selectedDayTextColor: "#ffffff",
+                  todayTextColor: "#FF7096",
+                  dayTextColor: "#2D2D3A",
+                  arrowColor: "#FF7096",
+                  monthTextColor: "#2D2D3A",
+                  textDayFontWeight: "600",
+                  textMonthFontWeight: "800",
+                  textDayHeaderFontWeight: "700",
+                  textDayFontSize: 14,
+                  textMonthFontSize: 16,
+                  textDisabledColor: "#E5E5EA",
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -105,7 +406,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#FFF0F3",
   },
-
   logoText: {
     fontSize: 22,
     fontWeight: "900",
@@ -123,10 +423,27 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginTop: -5,
   },
-  scrollContent: {
+  scrollContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
+
+  /* 💡 [정중앙 배치 핵심 스타일] 비어있을 때 공간을 강제로 꽉 키워 수직/수평 정렬을 발동시킵니다. */
+  centerScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 40,
+  },
+
+  centerFlex: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFBFB",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#757580",
   },
   cloudCard: {
     backgroundColor: "#FFFFFF",
@@ -149,16 +466,13 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 12,
   },
-  bubbleTagText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#FF7096",
-  },
+  bubbleTagText: { fontSize: 12, fontWeight: "700", color: "#FF7096" },
   mainCardTitle: {
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "#2D2D3A",
     textAlign: "center",
+    marginTop: 12,
   },
   mainCardDDay: {
     fontSize: 18,
@@ -178,15 +492,8 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderRadius: 24,
   },
-  cuteButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  sectionContainer: {
-    marginTop: 20,
-  },
-  /* 💡 새롭게 추가된 헤더 가로 정렬 스타일 */
+  cuteButtonText: { color: "#FFF", fontSize: 16, fontWeight: "800" },
+  sectionContainer: { marginTop: 20 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -194,15 +501,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2D2D3A",
-  },
-  /* 💡 동글동글 아기자기한 플러스 버튼 배경 스타일 */
+  sectionTitle: { fontSize: 18, fontWeight: "700", color: "#2D2D3A" },
   addButton: {
     padding: 8,
-    backgroundColor: "#FF7096", // 앙증맞은 연핑크 배경 동그라미
+    backgroundColor: "#FF7096",
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
@@ -218,35 +520,109 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#F6F6FA",
   },
-  listItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  listItemLeft: { flexDirection: "row", alignItems: "center" },
   heartIconBg: {
     backgroundColor: "#FFF0F3",
     padding: 10,
     borderRadius: 50,
     marginRight: 14,
   },
-  listItemName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#2D2D3A",
-  },
-  listItemDate: {
-    fontSize: 12,
-    color: "#AEAEB2",
-    marginTop: 3,
-  },
+  listItemName: { fontSize: 15, fontWeight: "700", color: "#2D2D3A" },
+  listItemDate: { fontSize: 12, color: "#AEAEB2", marginTop: 3 },
   cuteDDayBadge: {
     backgroundColor: "#FFF0F3",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 50,
   },
-  cuteDDayText: {
+  cuteDDayText: { fontSize: 14, fontWeight: "800", color: "#FF7096" },
+
+  /* 🎀 감성 모달 스타일 */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(45, 45, 58, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    width: "100%",
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 2,
+    borderColor: "#FFE3EB",
+    shadowColor: "#FFCCD8",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalHeaderTitle: { fontSize: 18, fontWeight: "800", color: "#2D2D3A" },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#757580",
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFBFB",
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#F6F6FA",
+    paddingHorizontal: 16,
+    height: 52,
+    marginBottom: 16,
+  },
+  textInput: { flex: 1, fontSize: 14, fontWeight: "600", color: "#2D2D3A" },
+  dateTextValue: {
     fontSize: 14,
-    fontWeight: "800",
-    color: "#FF7096",
+    fontWeight: "600",
+    color: "#2D2D3A",
+  },
+  modalSubmitButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FF7096",
+    height: 54,
+    borderRadius: 20,
+    marginTop: 8,
+    shadowColor: "#FFCCD8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  modalSubmitButtonText: { color: "#FFF", fontSize: 15, fontWeight: "800" },
+  disabledButton: { backgroundColor: "#FFAEC4" },
+
+  /* 📆 달력 하단 오버레이 슬라이드 스타일 */
+  calendarModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(45, 45, 58, 0.2)",
+    justifyContent: "flex-end",
+  },
+  calendarContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    borderWidth: 2,
+    borderColor: "#FFE3EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 5,
   },
 });

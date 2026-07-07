@@ -223,6 +223,9 @@ class GiftRecommendView(APIView):
 
     def post(self, request, event_id):
         event = get_object_or_404(Event, id=event_id)
+
+        RecommendedProduct.objects.filter(event=event).delete()
+
         recipient = event.recipient
 
         if recipient.user != request.user:
@@ -418,7 +421,7 @@ class DateMemoView(APIView):
             memo = serializer.save(user=login_user)
             return Response(
                 {
-                    "message": f"'{memo.name}'님의 기념일 메모가 등록되었습니다.",
+                    "message": f"'{memo.content}'을 메모하였습니다.",
                     "memo_id": memo.id,
                     "people_memo": serializer.data,
                 },

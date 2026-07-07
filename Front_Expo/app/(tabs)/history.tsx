@@ -1,6 +1,16 @@
-import { Award, CheckCircle2, ChevronRight, Gift } from "lucide-react-native";
+import { client } from "@/api/client";
+import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
+import {
+  Award,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Gift,
+} from "lucide-react-native";
 import React from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -12,35 +22,65 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
-// 💡 장고 DB 연동을 고려한 과거 완료된 선물 히스토리 더미 데이터
-const PAST_HISTORIES = [
-  {
-    id: 1,
-    content: "여자친구 1000일 기념일",
-    date: "2026년 05월 14일",
-    giftName: "티파니앤코 실버 목걸이 💎",
-    price: "350,000원",
-    emoji: "💖",
-  },
-  {
-    id: 2,
-    content: "어버이날 감사 선물",
-    date: "2026년 05월 08일",
-    giftName: "설화수 자음 기초 2종 세트 🌸",
-    price: "120,000원",
-    emoji: "🏡",
-  },
-  {
-    id: 3,
-    content: "팀장님 승진 축하",
-    date: "2026년 04월 02일",
-    giftName: "스타벅스 디저트 텀블러 세트 ☕",
-    price: "45,000원",
-    emoji: "👔",
-  },
-];
+// 백엔드 Event 모델과 매핑되는 인터페이스 정의
+interface GiftEvent {
+  id: number;
+  purpose: string;
+  purpose_display: string; // 장고 choices의 가독성 좋은 한글 라벨
+  min_budget: number;
+  max_budget: number;
+  created_at: string;
+  recipient_name: string; // 누구에게 준 선물인지 표시하기 위함
+}
+
+// 목적별 어울리는 귀여운 이모지 매핑 딕셔너리
+const PURPOSE_EMOJIS: Record<string, string> = {
+  FRIEND_BDAY: "🎂",
+  LOVER_BDAY: "❤️",
+  PARENTS_BDAY: "💐",
+  COUPLE_ANNIV: "👩‍❤️‍👨",
+  WED_ANNIV: "💍",
+  GRADUATE: "🎓",
+  EMPLOY: "💼",
+  HOUSE: "🏠",
+  BIRTH: "👶",
+  SELF_GIFT: "🎁",
+};
 
 export default function HistoryScreen() {
+  const { data: userProfile, isLoading } = useQuery({
+    queryKey: ["userProfileHistory"],
+    queryFn: async () => {
+      const response = await client.get("user/me/");
+      return response.data;
+    },
+  });
+
+  // 🆕 2. 중첩된 구조(User -> Recipient -> Event)에서 역참조된 이벤트들만 일렬로 평탄화(Flat) 추출
+  const events = React.useMemo(() => {
+    if (!userProfile || !userProfile.recipients) return [];
+
+    // 유저가 가진 모든 지인들의 events 배열을 하나로 합침
+    return userProfile.recipients.flatMap(
+      (recipient: any) => recipient.events || [],
+    );
+  }, [userProfile]);
+
+  // 📊 대시보드용 통계 데이터 실시간 계산 (평탄화된 events 리스트 기반)
+  const totalCount = events.length;
+  const totalBudget = events.reduce(
+    (sum: number, item: any) => sum + item.max_budget,
+    0,
+  );
+
+  const formatSummaryPrice = (price: number) => {
+    if (price === 0) return "0원";
+    if (price >= 10000) {
+      return `${(price / 10000).toFixed(1).replace(".0", "")}만원`;
+    }
+    return `${price.toLocaleString()}원`;
+  };
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: "#FFFBFB" }]}
@@ -51,74 +91,125 @@ export default function HistoryScreen() {
         <Text style={styles.headerTitle}>Gift History</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 🏆 2. 몽글몽글 대시보드 통계 카드 */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryItem}>
-            <View style={[styles.iconBg, { backgroundColor: "#FFF0F3" }]}>
-              <Award size={22} color="#FF7096" />
-            </View>
-            <Text style={styles.summaryCount}>3번의</Text>
-            <Text style={styles.summaryLabel}>성공적인 기념일</Text>
-          </View>
-
-          <View style={styles.dividerLine} />
-
-          <View style={styles.summaryItem}>
-            <View style={[styles.iconBg, { backgroundColor: "#FFF9E6" }]}>
-              <Gift size={22} color="#FFB800" />
-            </View>
-            <Text style={styles.summaryCount}>51.5만원</Text>
-            <Text style={styles.summaryLabel}>마음을 담은 선물</Text>
-          </View>
+      {isLoading ? (
+        <View style={styles.centerFlex}>
+          <ActivityIndicator size="large" color="#FF7096" />
+          <Text style={styles.loadingText}>지난 기록들을 불러오는 중...</Text>
         </View>
-
-        {/* 📅 3. 히스토리 타임라인 리스트 영역 */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>지난 기록들 🕒</Text>
-
-          {PAST_HISTORIES.map((item) => (
-            <View key={item.id} style={styles.historyCard}>
-              {/* 카드 상단: 이모지 + 타이틀 + 완료 체크 배지 */}
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.titleLeft}>
-                  <Text style={styles.cardEmoji}>{item.emoji}</Text>
-                  <View>
-                    <Text style={styles.cardTitle}>{item.content}</Text>
-                    <Text style={styles.cardDate}>{item.date}</Text>
-                  </View>
-                </View>
-                <View style={styles.successBadge}>
-                  <CheckCircle2
-                    size={14}
-                    color="#FF7096"
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text style={styles.successText}>완료</Text>
-                </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 🏆 2. 몽글몽글 대시보드 통계 카드 */}
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryItem}>
+              <View style={[styles.iconBg, { backgroundColor: "#FFF0F3" }]}>
+                <Award size={22} color="#FF7096" />
               </View>
-
-              {/* 점선이나 얇은 구분선 */}
-              <View style={styles.cardDivider} />
-
-              {/* 카드 하단: 내가 준 선물 정보 정보 */}
-              <TouchableOpacity style={styles.giftDetailRow}>
-                <View>
-                  <Text style={styles.giftLabel}>내가 전한 마음</Text>
-                  <Text style={styles.giftNameText}>{item.giftName}</Text>
-                </View>
-                <View style={styles.priceContainer}>
-                  <Text style={styles.priceText}>{item.price}</Text>
-                  <ChevronRight size={14} color="#AEAEB2" />
-                </View>
-              </TouchableOpacity>
+              <Text style={styles.summaryCount}>{totalCount}번의</Text>
+              <Text style={styles.summaryLabel}>성공적인 기념일</Text>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+
+            <View style={styles.dividerLine} />
+
+            <View style={styles.summaryItem}>
+              <View style={[styles.iconBg, { backgroundColor: "#FFF9E6" }]}>
+                <Gift size={22} color="#FFB800" />
+              </View>
+              <Text style={styles.summaryCount}>
+                {formatSummaryPrice(totalBudget)}
+              </Text>
+              <Text style={styles.summaryLabel}>마음을 담은 최대 예산</Text>
+            </View>
+          </View>
+
+          {/* 📅 3. 히스토리 타임라인 리스트 영역 */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>지난 기록들 🕒</Text>
+
+            {events.length > 0 ? (
+              events.map((item) => {
+                // 날짜 포맷 수정 (2026-05-14T... -> 2026년 05월 14일)
+                const displayDate = item.created_at
+                  ? new Date(item.created_at).toLocaleDateString("ko-KR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "날짜 미지정";
+
+                const emoji = PURPOSE_EMOJIS[item.purpose] || "💝";
+
+                return (
+                  <View key={item.id} style={styles.historyCard}>
+                    {/* 카드 상단: 이모지 + 타이틀 + 완료 체크 배지 */}
+                    <View style={styles.cardHeaderRow}>
+                      <View style={styles.titleLeft}>
+                        <Text style={styles.cardEmoji}>{emoji}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.cardTitle} numberOfLines={1}>
+                            {item.recipient_name} / {item.purpose_display}
+                          </Text>
+                          <Text style={styles.cardDate}>{displayDate}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.successBadge}>
+                        <CheckCircle2
+                          size={14}
+                          color="#FF7096"
+                          style={{ marginRight: 4 }}
+                        />
+                        <Text style={styles.successText}>완료</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.cardDivider} />
+
+                    {/* 🆕 카드 하단 터치 영역: 누르면 해당 recommendResult.tsx로 점프! */}
+                    <TouchableOpacity
+                      style={styles.giftDetailRow}
+                      onPress={() => {
+                        router.push({
+                          pathname: "/recommendResult",
+                          params: { event_id: item.id },
+                        });
+                      }}
+                    >
+                      <View>
+                        <Text style={styles.giftLabel}>설정했던 예산 범위</Text>
+                        <Text style={styles.giftNameText}>
+                          {item.min_budget.toLocaleString()}원 ~{" "}
+                          {item.max_budget.toLocaleString()}원
+                        </Text>
+                      </View>
+                      <View style={styles.priceContainer}>
+                        <Text style={styles.priceText}>추천 보기</Text>
+                        <ChevronRight
+                          size={14}
+                          color="#FF7096"
+                          strokeWidth={3}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Calendar
+                  size={40}
+                  color="#E5E5EA"
+                  style={{ marginBottom: 10 }}
+                />
+                <Text style={styles.emptyText}>
+                  아직 완료된 이벤트 기록이 없어요.
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -143,6 +234,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 16,
     paddingBottom: 40,
+  },
+  centerFlex: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFBFB",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#757580",
   },
   /* 🏆 상단 요약 대시보드 카드 */
   summaryCard: {
@@ -198,7 +301,7 @@ const styles = StyleSheet.create({
   },
   historyCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 28, // 둥글둥글 젤리 무드 마감
+    borderRadius: 28,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1.5,
@@ -213,6 +316,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    paddingRight: 8,
   },
   cardEmoji: {
     fontSize: 24,
@@ -253,7 +357,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFFBFB", // 은은한 핑크빛 배경으로 감싸기
+    backgroundColor: "#FFFBFB",
     padding: 12,
     borderRadius: 18,
   },
@@ -274,8 +378,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   priceText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "800",
     color: "#FF7096",
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#AEAEB2",
   },
 });

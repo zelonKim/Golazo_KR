@@ -1,6 +1,6 @@
 import { useTheme } from "@react-navigation/native";
 import { Tabs } from "expo-router";
-import { Gift, History, Home, User } from "lucide-react-native";
+import { Gift, History, Home, Settings2, UserPlus } from "lucide-react-native";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -59,7 +59,22 @@ export default function TabLayout() {
           title: "홈", // ⭕ 하단에 뜰 한글 이름 지정!
           tabBarIcon: ({ focused, color }) => (
             <Home
-              size={25} // 글자가 있을 때는 24 사이즈가 밸런스가 가장 좋습니다!
+              size={25}
+              color={focused ? colors.primary : color}
+              strokeWidth={focused ? 2.4 : 2}
+            />
+          ),
+        }}
+      />
+
+      {/* 4. 지인 관리 탭 */}
+      <Tabs.Screen
+        name="recipient"
+        options={{
+          title: "나의 지인", // ⭕ 한글 이름 지정!
+          tabBarIcon: ({ focused, color }) => (
+            <UserPlus
+              size={25}
               color={focused ? colors.primary : color}
               strokeWidth={focused ? 2.4 : 2}
             />
@@ -97,18 +112,26 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 4. 마이페이지 탭 */}
+      {/* 5. 마이페이지 탭 */}
       <Tabs.Screen
         name="mypage"
         options={{
-          title: "마이페이지", // ⭕ 한글 이름 지정!
+          title: "환경 설정", // ⭕ 한글 이름 지정!
           tabBarIcon: ({ focused, color }) => (
-            <User
+            <Settings2
               size={25}
               color={focused ? colors.primary : color}
               strokeWidth={focused ? 2.4 : 2}
             />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="recommendResult"
+        options={{
+          title: "추천 결과",
+          href: null,
         }}
       />
     </Tabs>

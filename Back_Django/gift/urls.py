@@ -48,11 +48,11 @@ urlpatterns = [
         RecommendedProductDetailView.as_view(),
         name="recommended-product_delete",
     ),
-    # 4. 지인 기념일 메모 CRUD
-    path("people-memo/", DateMemoView.as_view(), name="people-memo_list_create"),
+    # 4. 기념일 메모 CRUD
+    path("date-memo/", DateMemoView.as_view(), name="date-memo_list_create"),
     path(
-        "people-memo/<int:memo_id>/",
+        "date-memo/<int:memo_id>/",
         DateMemoDetailView.as_view(),
-        name="people-memo_read_update_delete",
+        name="date-memo_read_update_delete",
     ),
 ]
