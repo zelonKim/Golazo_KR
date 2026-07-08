@@ -7,14 +7,18 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Keyboard,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -393,287 +397,305 @@ export default function RecipientScreen() {
         visible={isFormModalVisible}
         onRequestClose={closeFormModal}
       >
-        <View style={styles.modalOverlay}>
-          <ScrollView
-            contentContainerStyle={styles.modalScrollContainer}
-            showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          // 🌟 [수정 2] iOS는 padding, 안드로이드는 네이티브 매커니즘(height 또는 생략) 분기 슛!
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={-30}
+        >
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
           >
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalHeaderTitle}>
-                  {editingRecipient ? "지인 정보 변경하기 " : "지인 등록하기 "}
-                </Text>
-                <TouchableOpacity onPress={closeFormModal}>
-                  <X size={20} color="#AEAEB2" />
-                </TouchableOpacity>
-              </View>
-
-              {/* 필드 1: 이름 */}
-              <Text style={styles.inputLabel}>이름</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="지인의 이름을 적어주세요"
-                  placeholderTextColor="#AEAEB2"
-                  value={name}
-                  onChangeText={setName}
-                />
-              </View>
-
-              {/* 필드 2: 성별 */}
-              <Text style={styles.inputLabel}>성별</Text>
-              <View style={styles.choiceRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.choiceBadge,
-                    gender === "M" && styles.choiceBadgeSelected,
-                  ]}
-                  onPress={() => setGender("M")}
-                >
-                  <Text
-                    style={[
-                      styles.choiceBadgeText,
-                      gender === "M" && { color: "white" },
-                    ]}
-                  >
-                    👦🏻 남성
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.choiceBadge,
-                    gender === "F" && styles.choiceBadgeSelected,
-                  ]}
-                  onPress={() => setGender("F")}
-                >
-                  <Text
-                    style={[
-                      styles.choiceBadgeText,
-                      gender === "F" && { color: "white" },
-                    ]}
-                  >
-                    👧🏻 여성
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* 필드 3: 나이대 (한눈에 보이는 Grid 3x3 구조) */}
-              <Text style={styles.inputLabel}>나이대</Text>
-              <View style={styles.gridContainer}>
-                {ageGroups.map((age) => (
-                  <TouchableOpacity
-                    key={age}
-                    style={[
-                      styles.gridBadge,
-                      ageGroup === age && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setAgeGroup(age)}
-                  >
-                    <Text
-                      style={[
-                        styles.gridBadgeText,
-                        ageGroup === age && { color: "white" },
-                      ]}
-                    >
-                      {age}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* 필드 4: MBTI 선택 UI (4지선다 조합형) */}
-              <Text style={[styles.inputLabel, { marginTop: 8 }]}>
-                MBTI (선택)
-              </Text>
-              <View style={styles.mbtiContainer}>
-                {/* E vs I */}
-                <View style={styles.mbtiColumn}>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiEI === "E" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiEI(mbtiEI === "E" ? null : "E")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiEI === "E" && { color: "white" },
-                      ]}
-                    >
-                      E
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiEI === "I" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiEI(mbtiEI === "I" ? null : "I")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiEI === "I" && { color: "white" },
-                      ]}
-                    >
-                      I
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                {/* S vs N */}
-                <View style={styles.mbtiColumn}>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiSN === "S" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiSN(mbtiSN === "S" ? null : "S")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiSN === "S" && { color: "white" },
-                      ]}
-                    >
-                      S
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiSN === "N" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiSN(mbtiSN === "N" ? null : "N")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiSN === "N" && { color: "white" },
-                      ]}
-                    >
-                      N
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                {/* T vs F */}
-                <View style={styles.mbtiColumn}>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiTF === "T" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiTF(mbtiTF === "T" ? null : "T")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiTF === "T" && { color: "white" },
-                      ]}
-                    >
-                      T
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiTF === "F" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiTF(mbtiTF === "F" ? null : "F")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiTF === "F" && { color: "white" },
-                      ]}
-                    >
-                      F
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                {/* J vs P */}
-                <View style={styles.mbtiColumn}>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiJP === "J" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiJP(mbtiJP === "J" ? null : "J")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiJP === "J" && { color: "white" },
-                      ]}
-                    >
-                      J
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.mbtiCell,
-                      mbtiJP === "P" && styles.choiceBadgeSelected,
-                    ]}
-                    onPress={() => setMbtiJP(mbtiJP === "P" ? null : "P")}
-                  >
-                    <Text
-                      style={[
-                        styles.mbtiCellText,
-                        mbtiJP === "P" && { color: "white" },
-                      ]}
-                    >
-                      P
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 필드 5: 취미 */}
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>
-                취미 (선택)
-              </Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="예) 독서, 축구, 요리 등"
-                  placeholderTextColor="#AEAEB2"
-                  value={hobbies}
-                  onChangeText={setHobbies}
-                />
-              </View>
-
-              {/* 필드 6: 특이사항 */}
-              <Text style={styles.inputLabel}>특이사항 (선택)</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  { height: 80, alignItems: "flex-start", paddingTop: 12 },
-                ]}
+            <View style={styles.modalOverlay}>
+              <ScrollView
+                contentContainerStyle={styles.modalScrollContainer}
+                showsVerticalScrollIndicator={false}
               >
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="핑크색을 좋아함, 파란색을 싫어함 등"
-                  placeholderTextColor="#AEAEB2"
-                  multiline
-                  numberOfLines={3}
-                  value={notes}
-                  onChangeText={setNotes}
-                />
-              </View>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalHeaderTitle}>
+                      {editingRecipient
+                        ? "지인 정보 변경하기 "
+                        : "지인 등록하기 "}
+                    </Text>
+                    <TouchableOpacity onPress={closeFormModal}>
+                      <X size={20} color="#AEAEB2" />
+                    </TouchableOpacity>
+                  </View>
 
-              {/* 최종 제출 버튼 */}
-              <TouchableOpacity
-                style={styles.modalSubmitButton}
-                onPress={handleSave}
-              >
-                <Text style={styles.modalSubmitButtonText}>
-                  {editingRecipient ? "변경사항 저장하기" : "지인 추가하기"}
-                </Text>
-                <UserPlus size={16} color="white" style={{ marginLeft: 6 }} />
-              </TouchableOpacity>
+                  {/* 필드 1: 이름 */}
+                  <Text style={styles.inputLabel}>이름</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="지인의 이름을 적어주세요"
+                      placeholderTextColor="#AEAEB2"
+                      value={name}
+                      onChangeText={setName}
+                    />
+                  </View>
+
+                  {/* 필드 2: 성별 */}
+                  <Text style={styles.inputLabel}>성별</Text>
+                  <View style={styles.choiceRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.choiceBadge,
+                        gender === "M" && styles.choiceBadgeSelected,
+                      ]}
+                      onPress={() => setGender("M")}
+                    >
+                      <Text
+                        style={[
+                          styles.choiceBadgeText,
+                          gender === "M" && { color: "white" },
+                        ]}
+                      >
+                        👦🏻 남성
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.choiceBadge,
+                        gender === "F" && styles.choiceBadgeSelected,
+                      ]}
+                      onPress={() => setGender("F")}
+                    >
+                      <Text
+                        style={[
+                          styles.choiceBadgeText,
+                          gender === "F" && { color: "white" },
+                        ]}
+                      >
+                        👧🏻 여성
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 필드 3: 나이대 (한눈에 보이는 Grid 3x3 구조) */}
+                  <Text style={styles.inputLabel}>나이대</Text>
+                  <View style={styles.gridContainer}>
+                    {ageGroups.map((age) => (
+                      <TouchableOpacity
+                        key={age}
+                        style={[
+                          styles.gridBadge,
+                          ageGroup === age && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setAgeGroup(age)}
+                      >
+                        <Text
+                          style={[
+                            styles.gridBadgeText,
+                            ageGroup === age && { color: "white" },
+                          ]}
+                        >
+                          {age}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* 필드 4: MBTI 선택 UI (4지선다 조합형) */}
+                  <Text style={[styles.inputLabel, { marginTop: 8 }]}>
+                    MBTI (선택)
+                  </Text>
+                  <View style={styles.mbtiContainer}>
+                    {/* E vs I */}
+                    <View style={styles.mbtiColumn}>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiEI === "E" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiEI(mbtiEI === "E" ? null : "E")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiEI === "E" && { color: "white" },
+                          ]}
+                        >
+                          E
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiEI === "I" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiEI(mbtiEI === "I" ? null : "I")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiEI === "I" && { color: "white" },
+                          ]}
+                        >
+                          I
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {/* S vs N */}
+                    <View style={styles.mbtiColumn}>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiSN === "S" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiSN(mbtiSN === "S" ? null : "S")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiSN === "S" && { color: "white" },
+                          ]}
+                        >
+                          S
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiSN === "N" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiSN(mbtiSN === "N" ? null : "N")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiSN === "N" && { color: "white" },
+                          ]}
+                        >
+                          N
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {/* T vs F */}
+                    <View style={styles.mbtiColumn}>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiTF === "T" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiTF(mbtiTF === "T" ? null : "T")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiTF === "T" && { color: "white" },
+                          ]}
+                        >
+                          T
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiTF === "F" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiTF(mbtiTF === "F" ? null : "F")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiTF === "F" && { color: "white" },
+                          ]}
+                        >
+                          F
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {/* J vs P */}
+                    <View style={styles.mbtiColumn}>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiJP === "J" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiJP(mbtiJP === "J" ? null : "J")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiJP === "J" && { color: "white" },
+                          ]}
+                        >
+                          J
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.mbtiCell,
+                          mbtiJP === "P" && styles.choiceBadgeSelected,
+                        ]}
+                        onPress={() => setMbtiJP(mbtiJP === "P" ? null : "P")}
+                      >
+                        <Text
+                          style={[
+                            styles.mbtiCellText,
+                            mbtiJP === "P" && { color: "white" },
+                          ]}
+                        >
+                          P
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* 필드 5: 취미 */}
+                  <Text style={[styles.inputLabel, { marginTop: 16 }]}>
+                    취미 (선택)
+                  </Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="예) 독서, 축구, 요리 등"
+                      placeholderTextColor="#AEAEB2"
+                      value={hobbies}
+                      onChangeText={setHobbies}
+                    />
+                  </View>
+
+                  {/* 필드 6: 특이사항 */}
+                  <Text style={styles.inputLabel}>특이사항 (선택)</Text>
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      { height: 80, alignItems: "flex-start", paddingTop: 12 },
+                    ]}
+                  >
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="핑크색을 좋아함, 파란색을 싫어함 등"
+                      placeholderTextColor="#AEAEB2"
+                      multiline
+                      numberOfLines={3}
+                      value={notes}
+                      onChangeText={setNotes}
+                    />
+                  </View>
+
+                  {/* 최종 제출 버튼 */}
+                  <TouchableOpacity
+                    style={styles.modalSubmitButton}
+                    onPress={handleSave}
+                  >
+                    <Text style={styles.modalSubmitButtonText}>
+                      {editingRecipient ? "변경사항 저장하기" : "지인 추가하기"}
+                    </Text>
+                    <UserPlus
+                      size={16}
+                      color="white"
+                      style={{ marginLeft: 6 }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
-          </ScrollView>
-        </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

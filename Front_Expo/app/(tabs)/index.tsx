@@ -1,12 +1,10 @@
 import { client } from "@/api/client";
 import { useTheme } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import {
-  Bell,
   CalendarDays,
   Calendar as CalendarIcon,
   Plus,
@@ -17,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -24,9 +23,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // 🔔 알림이 들어왔을 때 OS가 알림을 화면에 어떻게 띄울지 핸들러 기본 설정
@@ -141,8 +142,8 @@ export default function HomeScreen() {
       console.log("🎯 FCM 디바이스 푸시 토큰이 장고 서버에 동기화되었습니다.");
     },
     onError: (err: any) => {
-      console.error(
-        "⚠️ 푸시 토큰 서버 전송 실패:",
+      console.log(
+        "푸시 토큰 서버 전송 실패:",
         err.response?.data || err.message,
       );
     },
@@ -176,15 +177,10 @@ export default function HomeScreen() {
 
       // 4. 기기 고유의 Expo Push Token 발급 받기
       try {
-        const projectId =
-          Constants.expoConfig?.extra?.eas?.projectId ??
-          Constants.easConfig?.projectId;
-
         const tokenData = await Notifications.getDevicePushTokenAsync();
 
         console.log("📡 구글/애플 공인 순수 디바이스 토큰:", tokenData.data);
         savePushTokenMutation.mutate(tokenData.data);
-
 
         // 안드로이드 기기일 경우 진동/소리 채널 최적화 마감
         if (Platform.OS === "android") {
@@ -226,9 +222,9 @@ export default function HomeScreen() {
       {/* 1. 상단 헤더 */}
       <View style={styles.header}>
         <Text style={styles.logoText}>Special Day</Text>
-        <TouchableOpacity style={styles.iconButton}>
-          <Bell size={20} color="#5C5C62" />
-        </TouchableOpacity>
+        {/* <TouchableOpacity style={styles.iconButton}>
+          <Settings size={20} color="#5C5C62" />
+        </TouchableOpacity> */}
       </View>
 
       {/* 로딩 인디케이터 처리 */}
@@ -327,7 +323,7 @@ export default function HomeScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.cuteButton}
-                onPress={() => setIsVisible(true)}
+                onPress={() => setIsModalVisible(true)}
               >
                 <Text style={styles.cuteButtonText}>특별한 날 메모하기</Text>
                 <Text> 🗓️</Text>
@@ -348,78 +344,97 @@ export default function HomeScreen() {
           setIsModalVisible(false);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalHeaderTitle}>특별한 날 메모하기 </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setIsModalVisible(false);
-                  setMemoContent("");
-                  setMemoDate("");
-                }}
-              >
-                <X size={20} color="#AEAEB2" />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          // 🌟 [수정 2] iOS는 padding, 안드로이드는 네이티브 매커니즘(height 또는 생략) 분기 슛!
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.select({
+            ios: -80, // 헤더나 탭바 높이에 맞춰 오프셋 보정
+            android: -60,
+          })}
+        >
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalHeaderTitle}>
+                    특별한 날 메모하기{" "}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setIsModalVisible(false);
+                      setMemoContent("");
+                      setMemoDate("");
+                    }}
+                  >
+                    <X size={20} color="#AEAEB2" />
+                  </TouchableOpacity>
+                </View>
 
-            <Text style={styles.inputLabel}>어떤 날인가요?</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="예) 엄마 생일, 100일 기념일"
-                placeholderTextColor="#AEAEB2"
-                value={memoContent}
-                onChangeText={setMemoContent}
-              />
-            </View>
+                <Text style={styles.inputLabel}>어떤 날인가요?</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="예) 엄마 생일, 100일 기념일"
+                    placeholderTextColor="#AEAEB2"
+                    value={memoContent}
+                    onChangeText={setMemoContent}
+                  />
+                </View>
 
-            <Text style={styles.inputLabel}>그 날은 언제인가요?</Text>
-            <TouchableOpacity
-              style={styles.inputWrapper}
-              onPress={() => setIsCalendarVisible(true)}
-            >
-              <Text
-                style={[
-                  styles.dateTextValue,
-                  !memoDate && { color: "#AEAEB2" },
-                ]}
-              >
-                {memoDate || (
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <CalendarDays size={18} color={"#AEAEB2"} />
-                    <Text
-                      style={{
-                        color: "#AEAEB2",
-                        fontSize: 14,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {"  "}날짜를 선택해 주세요
+                <Text style={styles.inputLabel}>그 날은 언제인가요?</Text>
+                <TouchableOpacity
+                  style={styles.inputWrapper}
+                  onPress={() => setIsCalendarVisible(true)}
+                >
+                  <Text
+                    style={[
+                      styles.dateTextValue,
+                      !memoDate && { color: "#AEAEB2" },
+                    ]}
+                  >
+                    {memoDate || (
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <CalendarDays size={18} color={"#AEAEB2"} />
+                        <Text
+                          style={{
+                            color: "#AEAEB2",
+                            fontSize: 14,
+                            fontWeight: "600",
+                          }}
+                        >
+                          {"  "}날짜를 선택해 주세요
+                        </Text>
+                      </View>
+                    )}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalSubmitButton,
+                    addMemoMutation.isPending && styles.disabledButton,
+                  ]}
+                  onPress={handleCreateMemo}
+                  disabled={addMemoMutation.isPending}
+                >
+                  {addMemoMutation.isPending ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.modalSubmitButtonText}>
+                      메모함에 저장하기
                     </Text>
-                  </View>
-                )}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.modalSubmitButton,
-                addMemoMutation.isPending && styles.disabledButton,
-              ]}
-              onPress={handleCreateMemo}
-              disabled={addMemoMutation.isPending}
-            >
-              {addMemoMutation.isPending ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.modalSubmitButtonText}>
-                  메모함에 저장하기
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
 
         {/* 📅 5. 중첩 달력 모달 */}
         <Modal

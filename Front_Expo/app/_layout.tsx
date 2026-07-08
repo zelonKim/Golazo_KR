@@ -6,6 +6,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 
 export {
@@ -57,14 +58,16 @@ const MyGiftAppTheme = {
 function RootLayoutNav() {
   return (
     <ThemeProvider value={MyGiftAppTheme}>
-      <APIProvider>
-        <StatusBar style="dark" backgroundColor="#FFFFFF" />
-        <Stack>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        </Stack>
-      </APIProvider>
+      <KeyboardProvider>
+        <APIProvider>
+          <StatusBar style="dark" backgroundColor="#FFFFFF" />
+          <Stack>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          </Stack>
+        </APIProvider>
+      </KeyboardProvider>
     </ThemeProvider>
   );
 }

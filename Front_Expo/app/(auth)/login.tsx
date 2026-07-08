@@ -8,13 +8,16 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Keyboard,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -77,69 +80,81 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: "#FFFBFB" }]}>
-      <View style={styles.content}>
-        {/* 🪄 1. 상단 인트로 타이틀 */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.subTitle}>좋아할만한 선물 좀 골라줘</Text>
-          <Text style={styles.mainTitle}>Golazo AI</Text>
-        </View>
+      <KeyboardAvoidingView
+        // 🌟 [수정 2] iOS는 padding, 안드로이드는 네이티브 매커니즘(height 또는 생략) 분기 슛!
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.select({
+          ios: 0, // 헤더나 탭바 높이에 맞춰 오프셋 보정
+          android: 10,
+        })}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.content}>
+            {/* 🪄 1. 상단 인트로 타이틀 */}
+            <View style={styles.welcomeSection}>
+              <Text style={styles.subTitle}>좋아할만한 선물 좀 골라줘</Text>
+              <Text style={styles.mainTitle}>Golazo AI</Text>
+            </View>
 
-        {/* 폼 영역 */}
-        <View style={styles.formContainer}>
-          {/* ✉ 이메일 입력창 */}
-          <View style={styles.inputWrapper}>
-            <Mail size={18} color="#FF7096" style={styles.inputIcon} />
-            <TextInput
-              style={styles.textInput}
-              placeholder="이메일 주소를 입력해주세요"
-              placeholderTextColor="#AEAEB2"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
+            {/* 폼 영역 */}
+            <View style={styles.formContainer}>
+              {/* ✉ 이메일 입력창 */}
+              <View style={styles.inputWrapper}>
+                <Mail size={18} color="#FF7096" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="이메일 주소를 입력해주세요"
+                  placeholderTextColor="#AEAEB2"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+
+              {/* 🔒 비밀번호 입력창 */}
+              <View style={styles.inputWrapper}>
+                <Lock size={18} color="#FF7096" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="비밀번호를 입력해주세요"
+                  placeholderTextColor="#AEAEB2"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
+            </View>
+
+            {/* 🚀 3. 로그인 하기 매직 버튼 */}
+            <TouchableOpacity
+              style={[
+                styles.cuteButton,
+                loginMutation.isPending && styles.disabledButton,
+              ]}
+              onPress={handleLogin}
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Text style={styles.cuteButtonText}>로그인하기</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.signupLink}>
+              <Text style={styles.signupLinkText}>아직 계정이 없으신가요?</Text>
+              <TouchableOpacity onPress={() => router.push("./signup")}>
+                <Text style={styles.signupLinkTextBold}> 가입하기 </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          {/* 🔒 비밀번호 입력창 */}
-          <View style={styles.inputWrapper}>
-            <Lock size={18} color="#FF7096" style={styles.inputIcon} />
-            <TextInput
-              style={styles.textInput}
-              placeholder="비밀번호를 입력해주세요"
-              placeholderTextColor="#AEAEB2"
-              secureTextEntry
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-        </View>
-
-        {/* 🚀 3. 로그인 하기 매직 버튼 */}
-        <TouchableOpacity
-          style={[
-            styles.cuteButton,
-            loginMutation.isPending && styles.disabledButton,
-          ]}
-          onPress={handleLogin}
-          disabled={loginMutation.isPending}
-        >
-          {loginMutation.isPending ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <>
-              <Text style={styles.cuteButtonText}>로그인하기</Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.signupLink}>
-          <Text style={styles.signupLinkText}>아직 계정이 없으신가요?</Text>
-          <TouchableOpacity onPress={() => router.push("./signup")}>
-            <Text style={styles.signupLinkTextBold}> 가입하기 </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

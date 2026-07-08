@@ -17,16 +17,18 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -242,7 +244,7 @@ export default function MyPageScreen() {
           </TouchableOpacity>
 
           {/* 기념일 푸시 알림 */}
-          <View style={styles.cuteListItem}>
+          {/* <View style={styles.cuteListItem}>
             <View style={styles.listItemLeft}>
               <View style={styles.heartIconBg}>
                 <Settings size={16} color="#FF7096" />
@@ -261,7 +263,7 @@ export default function MyPageScreen() {
               onValueChange={() => setIsAlarmEnabled(!isAlarmEnabled)}
               value={isAlarmEnabled}
             />
-          </View>
+          </View> */}
 
           {/* 로그아웃 버튼 */}
           <TouchableOpacity style={styles.cuteListItem} onPress={handleLogOut}>
@@ -309,35 +311,51 @@ export default function MyPageScreen() {
         visible={isEditModalVisible}
         onRequestClose={() => setIsEditModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalHeaderTitle}>닉네임 설정 및 변경</Text>
-              <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
-                <X size={20} color="#AEAEB2" />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          // 안드로이드는 네이티브 윈도우 조절을 타므로 iOS만 살짝 패딩 보정해주면 부드럽습니다.
+          keyboardVerticalOffset={Platform.OS === "ios" ? -150 : -120}
+        >
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalHeaderTitle}>
+                    닉네임 설정 및 변경
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setIsEditModalVisible(false)}
+                  >
+                    <X size={20} color="#AEAEB2" />
+                  </TouchableOpacity>
+                </View>
 
-            <Text style={styles.inputLabel}>새로운 닉네임</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="닉네임을 입력해 주세요"
-                placeholderTextColor="#AEAEB2"
-                value={inputNickname}
-                onChangeText={setInputNickname}
-                maxLength={15}
-              />
-            </View>
+                <Text style={styles.inputLabel}>새로운 닉네임</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="닉네임을 입력해 주세요"
+                    placeholderTextColor="#AEAEB2"
+                    value={inputNickname}
+                    onChangeText={setInputNickname}
+                    maxLength={15}
+                  />
+                </View>
 
-            <TouchableOpacity
-              style={styles.modalSubmitButton}
-              onPress={handleSaveNickname}
-            >
-              <Text style={styles.modalSubmitButtonText}>저장하기</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+                <TouchableOpacity
+                  style={styles.modalSubmitButton}
+                  onPress={handleSaveNickname}
+                >
+                  <Text style={styles.modalSubmitButtonText}>저장하기</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
