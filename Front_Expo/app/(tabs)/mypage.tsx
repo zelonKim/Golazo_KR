@@ -1,15 +1,29 @@
+import { client } from "@/api/client";
 import { useTheme } from "@react-navigation/native";
-import { useRouter } from "expo-router"; // 💡 라우터 이동을 위해 임포트 추가!
-import * as SecureStore from "expo-secure-store"; // 💡 토큰 삭제를 위해 임포트 추가!
-import { Gift, Heart, LogOut, Settings, User } from "lucide-react-native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import {
+  Gift,
+  Heart,
+  LogOut,
+  Settings,
+  User,
+  UserX,
+  X,
+} from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert, // 💡 로그아웃 확인 창을 위해 임포트 추가!
+  ActivityIndicator,
+  Alert,
   Dimensions,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -17,51 +31,132 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
+interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  nickname?: string | null;
+  recipients?: any[];
+}
+
 export default function MyPageScreen() {
   const { colors } = useTheme();
-  const router = useRouter(); // 💡 라우터 훅 선언
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [isAlarmEnabled, setIsAlarmEnabled] = useState(true);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [inputNickname, setInputNickname] = useState("");
 
-  // 🚪 실제 로그아웃 처리 핸들러 함수
+  // 🔍 1. useQuery: 내 프로필 정보 실시간 조회 (GET /user/me/)
+  const { data: profile, isLoading } = useQuery<UserProfile>({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const response = await client.get("user/me/");
+      return response.data;
+    },
+  });
+
+  // 🚀 2. useMutation: 닉네임 수정 (PATCH /user/me/)
+  const updateNicknameMutation = useMutation({
+    mutationFn: async (nickname: string) => {
+      const response = await client.patch("user/me/", { nickname });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      Alert.alert("변경 완료", "새로운 닉네임이 프로필에 반영되었습니다.");
+      setIsEditModalVisible(false);
+    },
+    onError: () => {
+      Alert.alert("오류", "닉네임 수정에 실패했습니다.");
+    },
+  });
+
+  // 🚀 3. useMutation: 회원 탈퇴 (DELETE /user/me/)
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      return (await client.delete("user/me/")).data;
+    },
+    onSuccess: async () => {
+      await SecureStore.deleteItemAsync("userToken");
+      Alert.alert(
+        "탈퇴 완료 🌊",
+        "그동안 서비스를 이용해 주셔서 진심으로 감사드립니다.",
+      );
+      router.replace("/login");
+    },
+    onError: () => {
+      Alert.alert("오류 😢", "탈퇴 처리에 실패했습니다. 다시 시도해 주세요.");
+    },
+  });
+
+  // 🛠️ 닉네임 변경 폼 열기 핸들러
+  const openEditModal = () => {
+    setInputNickname(profile?.nickname || "");
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveNickname = () => {
+    if (!inputNickname.trim()) {
+      Alert.alert("알림", "원하시는 닉네임을 적어주세요!");
+      return;
+    }
+    updateNicknameMutation.mutate(inputNickname.trim());
+  };
+
   const handleLogOut = () => {
-    Alert.alert(
-      "로그아웃 ",
-      "정말 로그아웃 하시겠어요?",
-      [
-        {
-          text: "아니오",
-          style: "cancel", // 팝업 닫기
+    Alert.alert("로그아웃", "정말 로그아웃 하시겠어요?", [
+      { text: "아니오", style: "cancel" },
+      {
+        text: "네",
+        style: "destructive",
+        onPress: async () => {
+          await SecureStore.deleteItemAsync("userToken");
+          router.replace("/login");
         },
-        {
-          text: "네",
-          style: "destructive", // 빨간색 강조 버튼 (iOS 기준)
-          onPress: async () => {
-            try {
-              // 1. 우리 인터셉터가 바라보는 토큰 키값을 완전히 삭제합니다.
-              await SecureStore.deleteItemAsync("userToken");
+      },
+    ]);
+  };
 
-              // 2. 뒤로가기로 마이페이지에 다시 못 오도록 replace를 사용해 로그인 창으로 워프!
-              router.replace("/login");
-            } catch (error) {
-              console.error("로그아웃 중 오류 발생:", error);
-              Alert.alert(
-                "오류",
-                "로그아웃 처리에 실패했습니다. 다시 시도해 주세요.",
-              );
-            }
-          },
+  // ⚠️ 회원 탈퇴 컨펌 얼럿 핸들러
+  const handleDeleteAccountCheck = () => {
+    Alert.alert(
+      "⚠️ 회원 탈퇴 ",
+      "정말 계정을 삭제하시겠어요?\n\n등록하신 지인 정보와 선물 추천 내역도 모두 삭제되며 이는 복구할 수 없습니다.",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "탈퇴할래요",
+          style: "destructive",
+          onPress: () => deleteAccountMutation.mutate(),
         },
       ],
-      { cancelable: true },
     );
   };
+
+  // 📊 역참조 데이터 개수 동적 연산
+  const totalRecipients = profile?.recipients?.length || 0;
+  const totalEvents =
+    profile?.recipients?.reduce((sum, r) => sum + (r.events?.length || 0), 0) ||
+    0;
+
+  if (isLoading) {
+    return (
+      <View style={styles.centerFlex}>
+        <ActivityIndicator size="large" color="#FF7096" />
+      </View>
+    );
+  }
+
+  // 표시 명칭 분기 가이드라인 반영
+  const displayNickname = profile?.nickname || "닉네임을 설정해주세요";
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: "#FFFBFB" }]}
       edges={["top"]}
     >
-      {/* 1. 귀여운 상단 헤더 */}
       <View style={styles.header}>
         <Text style={styles.logoText}>My Profile</Text>
       </View>
@@ -74,22 +169,36 @@ export default function MyPageScreen() {
         <View style={styles.cloudCard}>
           <View style={styles.profileMainRow}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarEmoji}>🧸</Text>
+              <Text style={styles.avatarEmoji}>🎁</Text>
             </View>
             <View style={styles.profileTextSide}>
               <View style={styles.badgeRow}>
                 <View style={styles.bubbleTag}>
-                  <Text style={styles.bubbleTagText}>반가워요 성진님✨</Text>
+                  <Text style={styles.bubbleTagText}>
+                    {profile?.nickname
+                      ? `반가워요 ${profile.nickname}님✨`
+                      : "반가워요 ✨"}
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.mainCardTitle}>김성진</Text>
-              <Text style={styles.mainCardEmail}>sungjin@example.com</Text>
+              <TouchableOpacity onPress={openEditModal}>
+                <Text
+                  style={[
+                    styles.mainCardTitle,
+                    !profile?.nickname && { color: "#bebec1", fontSize: 16 },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {displayNickname}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.mainCardEmail}>{profile?.email || ""}</Text>
             </View>
           </View>
 
           <View style={styles.cardDivider} />
 
-          {/* 미니 활동 통계 스탯 영역 */}
+          {/* 실시간 연동 미니 활동 통계 스탯 영역 */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Heart
@@ -98,32 +207,33 @@ export default function MyPageScreen() {
                 fill="#FF7096"
                 style={{ marginBottom: 4 }}
               />
-              <Text style={styles.statNumber}>12명</Text>
+              <Text style={styles.statNumber}>{totalRecipients}명</Text>
               <Text style={styles.statLabel}>소중한 인맥</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Gift size={16} color="#FFB800" style={{ marginBottom: 4 }} />
-              <Text style={styles.statNumber}>3개</Text>
+              <Text style={styles.statNumber}>{totalEvents}개</Text>
               <Text style={styles.statLabel}>챙긴 기념일</Text>
             </View>
           </View>
         </View>
 
-        {/* ⚙ 3. 서비스 설정 리스트 */}
+        {/* ⚙️ 3. 서비스 설정 리스트 */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>⚙ 서비스 설정</Text>
+            <Settings size={22} color={"#FF7096"} />
+            <Text style={styles.sectionTitle}>서비스 설정</Text>
           </View>
 
-          {/* 닉네임 변경 */}
-          <TouchableOpacity style={styles.cuteListItem}>
+          {/* 닉네임 변경 터치 시 모달 온 */}
+          <TouchableOpacity style={styles.cuteListItem} onPress={openEditModal}>
             <View style={styles.listItemLeft}>
               <View style={styles.heartIconBg}>
                 <User size={16} color="#FF7096" />
               </View>
               <View>
-                <Text style={styles.listItemName}>닉네임 변경</Text>
+                <Text style={styles.listItemName}>닉네임 설정 및 변경</Text>
                 <Text style={styles.listItemSubText}>
                   앱에서 사용할 이름 수정하기
                 </Text>
@@ -154,7 +264,6 @@ export default function MyPageScreen() {
           </View>
 
           {/* 로그아웃 버튼 */}
-          {/* 💡 여기에 onPress={handleLogOut}을 연결했습니다! */}
           <TouchableOpacity style={styles.cuteListItem} onPress={handleLogOut}>
             <View style={styles.listItemLeft}>
               <View style={styles.heartIconBg}>
@@ -168,13 +277,72 @@ export default function MyPageScreen() {
               </View>
             </View>
           </TouchableOpacity>
+
+          {/* 🆕 회원 탈퇴 버튼 (최하단 배치) */}
+          <TouchableOpacity
+            style={[styles.cuteListItem, { borderColor: "#FFF0F3" }]}
+            onPress={handleDeleteAccountCheck}
+          >
+            <View style={styles.listItemLeft}>
+              <View
+                style={[styles.heartIconBg, { backgroundColor: "#FFF0F3" }]}
+              >
+                <UserX size={16} color="#FF4D4D" />
+              </View>
+              <View>
+                <Text style={[styles.listItemName, { color: "#FF4D4D" }]}>
+                  회원 탈퇴
+                </Text>
+                <Text style={styles.listItemSubText}>
+                  계정 및 연관 데이터 영구 삭제
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* 🎀 닉네임 수정용 큐트 팝업 모달 */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isEditModalVisible}
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalHeaderTitle}>닉네임 설정 및 변경</Text>
+              <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
+                <X size={20} color="#AEAEB2" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.inputLabel}>새로운 닉네임</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="닉네임을 입력해 주세요"
+                placeholderTextColor="#AEAEB2"
+                value={inputNickname}
+                onChangeText={setInputNickname}
+                maxLength={15}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalSubmitButton}
+              onPress={handleSaveNickname}
+            >
+              <Text style={styles.modalSubmitButtonText}>저장하기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-// ... styles 구조는 기존 성진님 코드와 100% 동일하므로 생략합니다!
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -193,6 +361,12 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   scrollContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
+  centerFlex: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFBFB",
+  },
   cloudCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 32,
@@ -226,12 +400,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#FFE3EB",
   },
-  avatarEmoji: { fontSize: 32 },
-  mainCardTitle: { fontSize: 22, fontWeight: "800", color: "#2D2D3A" },
+  avatarEmoji: { fontSize: Platform.OS === "ios" ? 32 : 25 },
+  mainCardTitle: {
+    marginTop: Platform.OS === "ios" ? 4 : 0,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#2D2D3A",
+  },
   mainCardEmail: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#AEAEB2",
+    color: "#7c7c7c",
     marginTop: 2,
   },
   cardDivider: {
@@ -255,13 +434,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statDivider: { width: 1, height: 24, backgroundColor: "#F6F6FA" },
-  sectionContainer: { marginTop: 24 },
+  sectionContainer: { marginTop: 12 },
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
     marginBottom: 16,
     paddingHorizontal: 4,
+    gap: 6,
+    marginStart: 4,
   },
   sectionTitle: { fontSize: 18, fontWeight: "700", color: "#2D2D3A" },
   cuteListItem: {
@@ -289,4 +470,52 @@ const styles = StyleSheet.create({
     marginTop: 3,
     marginLeft: 14,
   },
+
+  /* 팝업 모달 감성 스타일 */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(45, 45, 58, 0.4)",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 2,
+    borderColor: "#FFE3EB",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalHeaderTitle: { fontSize: 18, fontWeight: "800", color: "#2D2D3A" },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#757580",
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFBFB",
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#F6F6FA",
+    paddingHorizontal: 16,
+    height: 52,
+    marginBottom: 20,
+  },
+  textInput: { flex: 1, fontSize: 14, fontWeight: "600", color: "#2D2D3A" },
+  modalSubmitButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FF7096",
+    height: 52,
+    borderRadius: 20,
+  },
+  modalSubmitButtonText: { color: "#FFF", fontSize: 14, fontWeight: "800" },
 });

@@ -1,8 +1,7 @@
 import { client } from "@/api/client";
-import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { router, useFocusEffect } from "expo-router";
 import {
-  Award,
   Calendar,
   CheckCircle2,
   ChevronRight,
@@ -48,6 +47,9 @@ const PURPOSE_EMOJIS: Record<string, string> = {
 };
 
 export default function HistoryScreen() {
+  const queryClient = useQueryClient();
+
+  // 🔍 1. useQuery: 내 프로필 정보 및 중첩 지인 데이터 가져오기
   const { data: userProfile, isLoading } = useQuery({
     queryKey: ["userProfileHistory"],
     queryFn: async () => {
@@ -56,7 +58,14 @@ export default function HistoryScreen() {
     },
   });
 
-  // 🆕 2. 중첩된 구조(User -> Recipient -> Event)에서 역참조된 이벤트들만 일렬로 평탄화(Flat) 추출
+  // 🆕 매직 디테일: 사용자가 히스토리 탭 메뉴를 누르고 진입할 때마다 캐시 무효화 및 리프레시 강제 가동!
+  useFocusEffect(
+    React.useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: ["userProfileHistory"] });
+    }, [queryClient]),
+  );
+
+  // 🔍 2. 중첩된 구조(User -> Recipient -> Event)에서 역참조된 이벤트들만 일렬로 평탄화(Flat) 추출
   const events = React.useMemo(() => {
     if (!userProfile || !userProfile.recipients) return [];
 
@@ -68,7 +77,13 @@ export default function HistoryScreen() {
 
   // 📊 대시보드용 통계 데이터 실시간 계산 (평탄화된 events 리스트 기반)
   const totalCount = events.length;
-  const totalBudget = events.reduce(
+
+  const totalMinBudget = events.reduce(
+    (sum: number, item: any) => sum + (item.min_budget || 0),
+    0,
+  );
+
+  const totalMaxBudget = events.reduce(
     (sum: number, item: any) => sum + item.max_budget,
     0,
   );
@@ -103,22 +118,26 @@ export default function HistoryScreen() {
         >
           {/* 🏆 2. 몽글몽글 대시보드 통계 카드 */}
           <View style={styles.summaryCard}>
+            {/* 왼쪽 탭: 최소 예산 대시보드 */}
             <View style={styles.summaryItem}>
-              <View style={[styles.iconBg, { backgroundColor: "#FFF0F3" }]}>
-                <Award size={22} color="#FF7096" />
+              <View style={[styles.iconBg, { backgroundColor: "#E6F7FF" }]}>
+                <Gift size={22} color="#1890FF" />
               </View>
-              <Text style={styles.summaryCount}>{totalCount}번의</Text>
-              <Text style={styles.summaryLabel}>성공적인 기념일</Text>
+              <Text style={styles.summaryCount}>
+                {formatSummaryPrice(totalMinBudget)}
+              </Text>
+              <Text style={styles.summaryLabel}>마음을 담은 최소 예산</Text>
             </View>
 
             <View style={styles.dividerLine} />
 
+            {/* 오른쪽 탭: 최대 예산 */}
             <View style={styles.summaryItem}>
               <View style={[styles.iconBg, { backgroundColor: "#FFF9E6" }]}>
                 <Gift size={22} color="#FFB800" />
               </View>
               <Text style={styles.summaryCount}>
-                {formatSummaryPrice(totalBudget)}
+                {formatSummaryPrice(totalMaxBudget)}
               </Text>
               <Text style={styles.summaryLabel}>마음을 담은 최대 예산</Text>
             </View>
@@ -126,7 +145,7 @@ export default function HistoryScreen() {
 
           {/* 📅 3. 히스토리 타임라인 리스트 영역 */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>지난 기록들 🕒</Text>
+            <Text style={styles.sectionTitle}>📋 지난 기록들 </Text>
 
             {events.length > 0 ? (
               events.map((item) => {
@@ -160,13 +179,13 @@ export default function HistoryScreen() {
                           color="#FF7096"
                           style={{ marginRight: 4 }}
                         />
-                        <Text style={styles.successText}>완료</Text>
+                        <Text style={styles.successText}>추천 완료</Text>
                       </View>
                     </View>
 
                     <View style={styles.cardDivider} />
 
-                    {/* 🆕 카드 하단 터치 영역: 누르면 해당 recommendResult.tsx로 점프! */}
+                    {/* 카드 하단 터치 영역: 누르면 해당 recommendResult.tsx로 점프! */}
                     <TouchableOpacity
                       style={styles.giftDetailRow}
                       onPress={() => {
@@ -177,14 +196,14 @@ export default function HistoryScreen() {
                       }}
                     >
                       <View>
-                        <Text style={styles.giftLabel}>설정했던 예산 범위</Text>
+                        <Text style={styles.giftLabel}>예산 범위</Text>
                         <Text style={styles.giftNameText}>
                           {item.min_budget.toLocaleString()}원 ~{" "}
                           {item.max_budget.toLocaleString()}원
                         </Text>
                       </View>
                       <View style={styles.priceContainer}>
-                        <Text style={styles.priceText}>추천 보기</Text>
+                        <Text style={styles.priceText}>선물 보기</Text>
                         <ChevronRight
                           size={14}
                           color="#FF7096"
@@ -203,7 +222,7 @@ export default function HistoryScreen() {
                   style={{ marginBottom: 10 }}
                 />
                 <Text style={styles.emptyText}>
-                  아직 완료된 이벤트 기록이 없어요.
+                  아직 추천받은 내역이 없어요.
                 </Text>
               </View>
             )}

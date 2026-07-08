@@ -126,7 +126,8 @@ export default function RecommendScreen() {
         <View style={styles.formContainer}>
           <Text style={styles.mainTitle}>누구를 위한 선물인가요? ✨</Text>
           <Text style={styles.mainSub}>
-            이벤트를 등록하고 AI 맞춤 추천을 받아보세요.
+            선물 대상과 이벤트를 등록하고 AI에게 {"\n"}최적의 선물을 추천
+            받아보세요.
           </Text>
 
           {/* 인풋 1: 누구에게 줄 선물인가요? */}
@@ -149,7 +150,7 @@ export default function RecommendScreen() {
             >
               <UserPlus size={13} color="#FF7096" style={{ marginRight: 4 }} />
               <Text style={[styles.recipientBadgeText, { fontWeight: "900" }]}>
-                + 지인 추가
+                지인 추가 +
               </Text>
             </TouchableOpacity>
 
@@ -244,9 +245,7 @@ export default function RecommendScreen() {
             {createEventMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.modalSubmitButtonText}>
-                이벤트 등록하고 선물 추천받기 🚀
-              </Text>
+              <Text style={styles.modalSubmitButtonText}>선물 추천받기 🤖</Text>
             )}
           </TouchableOpacity>
         </View>

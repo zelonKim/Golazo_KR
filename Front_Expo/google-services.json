@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "98991306295",
+    "project_id": "golazo-fe38d",
+    "storage_bucket": "golazo-fe38d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98991306295:android:f13cb8bef6934d8bbeb1b2",
+        "android_client_info": {
+          "package_name": "com.zelon.golazo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCL21CTdNdcwuNVFDyYAd_Z-lXzPq5iGRQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

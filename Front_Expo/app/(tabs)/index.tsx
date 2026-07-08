@@ -1,6 +1,9 @@
 import { client } from "@/api/client";
 import { useTheme } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import {
   Bell,
@@ -9,12 +12,13 @@ import {
   Plus,
   X,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,6 +28,15 @@ import {
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// 🔔 알림이 들어왔을 때 OS가 알림을 화면에 어떻게 띄울지 핸들러 기본 설정
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 // 📅 달력 한글화 글로벌 세팅
 LocaleConfig.locales["ko"] = {
@@ -91,11 +104,7 @@ export default function HomeScreen() {
   const [memoDate, setMemoDate] = useState("");
 
   // 🔍 1. useQuery: 장고 백엔드로부터 로그인한 유저의 기념일 리스트 가져오기
-  const {
-    data: anniversaries = [],
-    isLoading,
-    isError,
-  } = useQuery<DateMemo[]>({
+  const { data: anniversaries = [], isLoading } = useQuery<DateMemo[]>({
     queryKey: ["dateMemos"],
     queryFn: async () => {
       const response = await client.get("gift/date-memo/");
@@ -121,6 +130,108 @@ export default function HomeScreen() {
       Alert.alert("등록 실패", "입력 형식을 다시 한번 확인해 주세요.");
     },
   });
+
+  // 🚀 3. 🆕 useMutation: 스마트폰 기기 푸시 토큰 백엔드로 전송 (POST)
+  const savePushTokenMutation = useMutation({
+    mutationFn: async (token: string) => {
+      // 엔드포인트 주소는 장고 백엔드 API 설계명에 맞게 편하게 커스텀하세요!
+      return await client.post("user/push-token/", { token });
+    },
+    onSuccess: () => {
+      console.log("🎯 FCM 디바이스 푸시 토큰이 장고 서버에 동기화되었습니다.");
+    },
+    onError: (err: any) => {
+      console.error(
+        "⚠️ 푸시 토큰 서버 전송 실패:",
+        err.response?.data || err.message,
+      );
+    },
+  });
+
+  // 💡 🆕 초동 로드 시 알림 권한 획득 및 토큰 추출 프로세스 기동
+  useEffect(() => {
+    async function setupNotifications() {
+      // 에뮬레이터나 시뮬레이터 브라우저 기기 격리 처리
+      if (!Device.isDevice) {
+        console.log("➡️ 시뮬레이터 환경에서는 푸시 토큰 발급이 제한됩니다.");
+        return;
+      }
+
+      // 1. 기존 권한 검사
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      // 2. 최초 진입 시 권한이 없다면 스마트폰 상단 팝업 띄우기
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      // 3. 유저가 끝내 거부했을 때 방어 코드
+      if (finalStatus !== "granted") {
+        console.log("➡️ 사용자가 푸시 알림을 거부했습니다.");
+        return;
+      }
+
+      // app/(tabs)/index.tsx 내부 4번 영역 교체
+
+      try {
+        let fcmToken = "";
+
+        if (Platform.OS === "android") {
+          const androidDeviceToken =
+            await Notifications.getDevicePushTokenAsync();
+          fcmToken = androidDeviceToken.data;
+          console.log("🤖 안드로이드 FCM 순수 토큰 추출:", fcmToken);
+        } else if (Platform.OS === "ios") {
+          // 1. 64자리 애플 순정 APNs 토큰을 먼저 확보합니다.
+          const iosDeviceToken = await Notifications.getDevicePushTokenAsync();
+
+          // 2. EAS 프로젝트 ID를 가져옵니다.
+          const projectId =
+            Constants.expoConfig?.extra?.eas?.projectId ??
+            Constants.easConfig?.projectId;
+
+          // 🚨 [여기가 핵심!] Expo 서버에 요청할 때 애플 순정 토큰을 함께 쥐여주면,
+          // 대괄호 [ ] 내부에 가짜 ID 대신 "진짜 구글 FCM 토큰 알맹이"를 구워서 반환합니다!
+          const iosExpoToken = await Notifications.getExpoPushTokenAsync({
+            projectId: projectId,
+            devicePushToken: iosDeviceToken, // 👈 확보한 애플 토큰을 반드시 주입해야 합니다!
+          });
+
+          let rawToken = iosExpoToken.data; // 예: "ExponentPushToken[진짜_FCM_토큰_알맹이]"
+
+          // 3. 대괄호 내부에서 진짜 구글 FCM 서버가 공인하는 토큰 알맹이만 쏙 파싱합니다.
+          const match = rawToken.match(/\[(.*?)\]/);
+          if (match && match[1]) {
+            fcmToken = match[1];
+            console.log(
+              "🍏 iOS 대괄호 분리 완료! 진짜 FCM 원시 토큰:",
+              fcmToken,
+            );
+          } else {
+            fcmToken = rawToken;
+          }
+        }
+
+        // 🚀 이제 꼬임 없는 '진짜 100% FCM 규격 토큰'만 장고 백엔드로 전송됩니다!
+        if (fcmToken && !fcmToken.includes("ExponentPushToken")) {
+          console.log(
+            "✅ 장고 서버로 최종 동기화 요청을 보냅니다. 토큰:",
+            fcmToken,
+          );
+          savePushTokenMutation.mutate(fcmToken);
+        } else {
+          console.error("❌ 유효한 FCM 토큰 변환에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("❌ 최종 토큰 발급 프로세스 에러:", error);
+      }
+    }
+
+    setupNotifications();
+  }, []);
 
   // 💾 등록하기 버튼 누를 때 검증 핸들러
   const handleCreateMemo = () => {
@@ -158,7 +269,6 @@ export default function HomeScreen() {
         </View>
       ) : (
         <ScrollView
-          /* 💡 [정중앙 배치 치트키] 데이터 유무에 따라 스크롤 뷰 컨테이너 스타일을 다르게 스위칭합니다! */
           contentContainerStyle={
             mainDDay ? styles.scrollContent : styles.centerScrollContent
           }
@@ -170,16 +280,16 @@ export default function HomeScreen() {
               <View style={styles.cloudCard}>
                 <View style={styles.bubbleTag}>
                   <Text style={styles.bubbleTagText}>
-                    곧 다가오는 특별한 날
+                    곧 다가오는 특별한 날 🎉
                   </Text>
                 </View>
 
+                <Text style={styles.mainCardTitle}>{mainDDay.content} </Text>
                 <Text style={styles.mainCardDDay}>
                   <Text style={{ color: "#FF7096" }}>
                     {mainDDay.d_day === 0 ? "D-Day 🎉" : `D-${mainDDay.d_day}`}
                   </Text>
                 </Text>
-                <Text style={styles.mainCardTitle}>{mainDDay.content}</Text>
                 <TouchableOpacity
                   onPress={() => router.push("/(tabs)/recommend")}
                   style={styles.cuteButton}
@@ -193,7 +303,7 @@ export default function HomeScreen() {
 
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>🎉 다가오는 특별한 날</Text>
+                  <Text style={styles.sectionTitle}>🗓️ 다가오는 특별한 날</Text>
                   <TouchableOpacity
                     style={styles.addButton}
                     onPress={() => setIsModalVisible(true)}
@@ -225,7 +335,7 @@ export default function HomeScreen() {
               </View>
             </>
           ) : (
-            /* 💡 데이터가 없을 때: 불필요한 레이아웃을 걷어내고 정중앙 전용 가로폭 카드 배치 */
+            /* 데이터가 없을 때: 전용 가로폭 카드 배치 */
             <View
               style={[styles.cloudCard, { width: "100%", marginBottom: 0 }]}
             >
@@ -247,7 +357,7 @@ export default function HomeScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.cuteButton}
-                onPress={() => setIsModalVisible(true)}
+                onPress={() => setIsVisible(true)}
               >
                 <Text style={styles.cuteButtonText}>특별한 날 메모하기</Text>
                 <Text> 🗓️</Text>
@@ -333,13 +443,15 @@ export default function HomeScreen() {
               {addMemoMutation.isPending ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.modalSubmitButtonText}>메모함에 저장하기</Text>
+                <Text style={styles.modalSubmitButtonText}>
+                  메모함에 저장하기
+                </Text>
               )}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 📅 5. 중첩 모달: 하단에서 슬라이딩되는 몽글몽글 달력 픽커 */}
+        {/* 📅 5. 중첩 달력 모달 */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -395,6 +507,7 @@ export default function HomeScreen() {
   );
 }
 
+// 스타일 시트는 완전 동일하므로 하단부 보존 상태로 생략합니다!
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -424,15 +537,12 @@ const styles = StyleSheet.create({
     marginTop: -5,
   },
   scrollContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
-
-  /* 💡 [정중앙 배치 핵심 스타일] 비어있을 때 공간을 강제로 꽉 키워 수직/수평 정렬을 발동시킵니다. */
   centerScrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 22,
   },
-
   centerFlex: {
     flex: 1,
     justifyContent: "center",
@@ -469,17 +579,16 @@ const styles = StyleSheet.create({
   bubbleTagText: { fontSize: 12, fontWeight: "700", color: "#FF7096" },
   mainCardTitle: {
     fontSize: 24,
-    fontWeight: "600",
+    fontWeight: Platform.OS === "ios" ? "900" : "700",
     color: "#2D2D3A",
     textAlign: "center",
-    marginTop: 12,
+    marginTop: Platform.OS === "ios" ? 11 : 8,
   },
   mainCardDDay: {
     fontSize: 18,
     fontWeight: "700",
     color: "#757580",
-    marginTop: 6,
-    marginBottom: 12,
+    marginTop: Platform.OS === "ios" ? 14 : 10,
     textAlign: "center",
   },
   cuteButton: {
@@ -536,8 +645,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   cuteDDayText: { fontSize: 14, fontWeight: "800", color: "#FF7096" },
-
-  /* 🎀 감성 모달 스타일 */
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(45, 45, 58, 0.4)",
@@ -584,11 +691,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   textInput: { flex: 1, fontSize: 14, fontWeight: "600", color: "#2D2D3A" },
-  dateTextValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#2D2D3A",
-  },
+  dateTextValue: { fontSize: 14, fontWeight: "600", color: "#2D2D3A" },
   modalSubmitButton: {
     flexDirection: "row",
     justifyContent: "center",
@@ -605,8 +708,6 @@ const styles = StyleSheet.create({
   },
   modalSubmitButtonText: { color: "#FFF", fontSize: 15, fontWeight: "800" },
   disabledButton: { backgroundColor: "#FFAEC4" },
-
-  /* 📆 달력 하단 오버레이 슬라이드 스타일 */
   calendarModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(45, 45, 58, 0.2)",

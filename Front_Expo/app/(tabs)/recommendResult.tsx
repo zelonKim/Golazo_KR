@@ -98,9 +98,6 @@ export default function RecommendResultScreen() {
       >
         <View style={styles.centerFlex}>
           <ActivityIndicator size="large" color="#FF7096" />
-          <Text style={styles.loadingText}>
-            이전 추천 상품 목록을 불러오는 중...
-          </Text>
         </View>
       </SafeAreaView>
     );
@@ -114,7 +111,7 @@ export default function RecommendResultScreen() {
       {/* 아기자기한 상단 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.push("/(tabs)/history")}
           style={styles.backButton}
         >
           <ArrowLeft size={22} color="#FF7096" strokeWidth={3} />
@@ -133,12 +130,13 @@ export default function RecommendResultScreen() {
           </View>
           <Text style={styles.mainCardTitle}>
             {recommendMutation.isPending
-              ? "AI가 선물을 고르고 있어요"
+              ? "선물 추천 중... ✨"
               : "선물 추천 완료! 🥳"}
           </Text>
           <Text style={styles.mainCardSub}>
-            지인의 성향 데이터와 설정하신 예산 범위를 매칭해 최적의 선물을
-            추천해 드려요.
+            {recommendMutation.isPending
+              ? "지인이 좋아할 만한 \n 최적의 선물을 고르고 있어요."
+              : `지인 정보와 예산 범위를 매칭해 \n 최적의 선물을 골라왔어요.`}
           </Text>
 
           {/* 다시 추천받기 버튼 테마 일치화 */}
@@ -164,7 +162,7 @@ export default function RecommendResultScreen() {
             <View style={styles.loaderBox}>
               <ActivityIndicator size="small" color="#FF7096" />
               <Text style={styles.loaderBoxText}>
-                AI 엔진이 상품 분석 및{"\n"}실시간 최저가 매핑 작업 중... 🚀
+                AI가 선물을 고르고 있어요.. 🤖
               </Text>
             </View>
           ) : displayItems.length > 0 ? (
@@ -204,7 +202,10 @@ export default function RecommendResultScreen() {
 
                 <TouchableOpacity
                   style={styles.linkButton}
-                  onPress={() => handleOpenLink(item.product_url)}
+                  onPress={() => {
+                    handleOpenLink(item.product_url);
+                    console.log("쿠팡 구매 URL:", item.product_url);
+                  }}
                 >
                   <Text style={styles.linkButtonText}>선물 구매하기</Text>
                   <ExternalLink

@@ -107,7 +107,7 @@ export default function RecipientScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipients"] });
-      Alert.alert("추가 완료", "해당 지인이 성공적으로 추가되었어요.");
+      Alert.alert("등록 완료 ✅", "지인이 성공적으로 등록되었어요.");
       closeFormModal();
     },
     onError: (error: any) => {
@@ -378,8 +378,8 @@ export default function RecipientScreen() {
             <View style={styles.emptyContainer}>
               <User size={40} color="#E5E5EA" />
               <Text style={styles.emptyText}>아직 등록된 지인이 없어요.</Text>
-              <Text style={[styles.emptyText, { marginTop: -12 }]}>
-                {"\n"}우측 상단 [+] 버튼을 눌러 지인을 추가해 보세요!
+              <Text style={[styles.emptyText, { marginTop: -16 }]}>
+                {"\n"}우측 상단 [+] 버튼을 눌러 지인을 등록해 보세요!
               </Text>
             </View>
           )}
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
     color: "#757580",
   },
   emptyContainer: {
-    paddingTop: 60,
+    paddingTop: 200,
     alignItems: "center",
     justifyContent: "center",
   },
