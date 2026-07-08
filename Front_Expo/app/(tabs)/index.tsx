@@ -174,59 +174,29 @@ export default function HomeScreen() {
         return;
       }
 
-      // app/(tabs)/index.tsx 내부 4번 영역 교체
-
+      // 4. 기기 고유의 Expo Push Token 발급 받기
       try {
-        let fcmToken = "";
+        const projectId =
+          Constants.expoConfig?.extra?.eas?.projectId ??
+          Constants.easConfig?.projectId;
 
+        const tokenData = await Notifications.getDevicePushTokenAsync();
+
+        console.log("📡 구글/애플 공인 순수 디바이스 토큰:", tokenData.data);
+        savePushTokenMutation.mutate(tokenData.data);
+
+
+        // 안드로이드 기기일 경우 진동/소리 채널 최적화 마감
         if (Platform.OS === "android") {
-          const androidDeviceToken =
-            await Notifications.getDevicePushTokenAsync();
-          fcmToken = androidDeviceToken.data;
-          console.log("🤖 안드로이드 FCM 순수 토큰 추출:", fcmToken);
-        } else if (Platform.OS === "ios") {
-          // 1. 64자리 애플 순정 APNs 토큰을 먼저 확보합니다.
-          const iosDeviceToken = await Notifications.getDevicePushTokenAsync();
-
-          // 2. EAS 프로젝트 ID를 가져옵니다.
-          const projectId =
-            Constants.expoConfig?.extra?.eas?.projectId ??
-            Constants.easConfig?.projectId;
-
-          // 🚨 [여기가 핵심!] Expo 서버에 요청할 때 애플 순정 토큰을 함께 쥐여주면,
-          // 대괄호 [ ] 내부에 가짜 ID 대신 "진짜 구글 FCM 토큰 알맹이"를 구워서 반환합니다!
-          const iosExpoToken = await Notifications.getExpoPushTokenAsync({
-            projectId: projectId,
-            devicePushToken: iosDeviceToken, // 👈 확보한 애플 토큰을 반드시 주입해야 합니다!
+          Notifications.setNotificationChannelAsync("default", {
+            name: "default",
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: "#FF7096",
           });
-
-          let rawToken = iosExpoToken.data; // 예: "ExponentPushToken[진짜_FCM_토큰_알맹이]"
-
-          // 3. 대괄호 내부에서 진짜 구글 FCM 서버가 공인하는 토큰 알맹이만 쏙 파싱합니다.
-          const match = rawToken.match(/\[(.*?)\]/);
-          if (match && match[1]) {
-            fcmToken = match[1];
-            console.log(
-              "🍏 iOS 대괄호 분리 완료! 진짜 FCM 원시 토큰:",
-              fcmToken,
-            );
-          } else {
-            fcmToken = rawToken;
-          }
-        }
-
-        // 🚀 이제 꼬임 없는 '진짜 100% FCM 규격 토큰'만 장고 백엔드로 전송됩니다!
-        if (fcmToken && !fcmToken.includes("ExponentPushToken")) {
-          console.log(
-            "✅ 장고 서버로 최종 동기화 요청을 보냅니다. 토큰:",
-            fcmToken,
-          );
-          savePushTokenMutation.mutate(fcmToken);
-        } else {
-          console.error("❌ 유효한 FCM 토큰 변환에 실패했습니다.");
         }
       } catch (error) {
-        console.error("❌ 최종 토큰 발급 프로세스 에러:", error);
+        console.error("❌ 토큰 발급 프로세스 도중 에러 발생:", error);
       }
     }
 

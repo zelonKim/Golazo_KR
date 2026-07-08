@@ -6,9 +6,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import SignUpSerializer
 from django.contrib.auth import get_user_model
-
 from rest_framework.permissions import IsAuthenticated
 from .serializers import UserSerializer
+from .serializers import PushTokenUpdateSerializer
 
 
 def get_tokens_for_user(user):
@@ -103,10 +103,22 @@ class MyProfileView(APIView):
     def patch(self, request):
         login_user = request.user
 
+        incoming_token = request.data.get("push_token")
+        if incoming_token:
+            print(
+                f"\n📡 [FCM 토큰 동기화 요청 수신] 유저: {login_user.email} | 토큰: {incoming_token}"
+            )
+
         serializer = UserSerializer(login_user, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
+
+            if incoming_token:
+                print(
+                    f"🎯 [동기화 완료] {login_user.email} 유저의 push_token 필드가 업데이트되었습니다.\n"
+                )
+
             return Response(
                 {
                     "message": "회원 정보가 성공적으로 수정되었습니다.",
@@ -128,3 +140,32 @@ class MyProfileView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+#########################
+
+
+class PushTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        login_user = request.user
+
+        serializer = PushTokenUpdateSerializer(
+            login_user, data=request.data, partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()  
+            return Response(
+                {
+                    "message": "디바이스 푸시 토큰이 성공적으로 등록되었습니다. 🎯",
+                    "user": {
+                        "username": login_user.username,
+                        "push_token": login_user.push_token,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

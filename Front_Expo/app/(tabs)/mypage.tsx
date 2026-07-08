@@ -477,6 +477,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(45, 45, 58, 0.4)",
     justifyContent: "center",
     paddingHorizontal: 24,
+    zIndex: -100,
   },
   modalContent: {
     backgroundColor: "#FFFFFF",

@@ -231,7 +231,7 @@ class GiftRecommendView(APIView):
         if recipient.user != request.user:
             raise PermissionDenied("선물 상대방에 대한 권한이 없습니다.")
 
-        fastapi_url = os.environ.get("FASTAPI_URL") + "/api/v1/recommend"
+        fastapi_url = os.environ.get("FASTAPI_URL") + "api/v1/recommend"
 
         payload = {
             "age_group": recipient.age_group,
