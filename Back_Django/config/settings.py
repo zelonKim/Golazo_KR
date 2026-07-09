@@ -135,5 +135,13 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": (
         "Bearer",
-    ),  # Expo에서 'Authorization: Bearer <토큰>' 형태로 보낼 예정
+    ),  
 }
+
+
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://your-app.up.railway.app',  # 🌟 내 Railway 주소로 변경
+]
