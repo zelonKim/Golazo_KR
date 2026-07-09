@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from schemas import RecommendRequest, RecommendResponse, RecommendListResponse
 from openai import OpenAI
+from fastapi.middleware.cors import CORSMiddleware
 
 
 load_dotenv()
@@ -11,6 +12,14 @@ load_dotenv()
 app = FastAPI(title="선물 추천 AI 엔진")
 
 client = OpenAI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 테스트 단계에서는 전체 허용, 추후 관리
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
