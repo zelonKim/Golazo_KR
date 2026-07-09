@@ -133,15 +133,12 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # 리프레시 토큰 유효기간 (7일)
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_HEADER_TYPES": (
-        "Bearer",
-    ),  
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 
-
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'https://your-app.up.railway.app',  # 🌟 내 Railway 주소로 변경
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://golazo-production-b424.up.railway.app",
 ]
