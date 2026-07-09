@@ -14,7 +14,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, verbose_name="이메일 주소")
 
     nickname = models.CharField(
-        max_length=30, blank=True, null=True, verbose_name="닉네임"
+        max_length=50, blank=True, null=True, verbose_name="닉네임"
     )
 
     push_token = models.CharField(

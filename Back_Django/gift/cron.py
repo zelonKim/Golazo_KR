@@ -114,5 +114,5 @@ def start_scheduler():
     register_events(scheduler)
     scheduler.start()
     print(
-        "🚀 APScheduler 백그라운드 스케줄러가 정상 가동되었습니다! (매일 아침 9시 작동)"
+        "🚀 APScheduler 백그라운드 스케줄러가 정상 가동되었습니다! (매일 오전 11시 작동)"
     )

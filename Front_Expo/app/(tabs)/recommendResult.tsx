@@ -1,18 +1,14 @@
 import { client } from "@/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ArrowLeft,
-  ExternalLink,
-  RefreshCw,
-  ShoppingBag,
-} from "lucide-react-native";
+import { ArrowLeft, Gift, RefreshCw, ShoppingBag } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -156,7 +152,11 @@ export default function RecommendResultScreen() {
 
         {/* 3. 추천 결과 상품 리스트 영역 */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>🎁 AI가 픽한 선물 리스트</Text>
+          <Text style={styles.sectionTitle}>
+            {" "}
+            <Gift size={20} color="#FF7096" style={{ marginLeft: 3 }} /> AI가
+            픽한 선물 리스트
+          </Text>
 
           {recommendMutation.isPending ? (
             <View style={styles.loaderBox}>
@@ -207,13 +207,13 @@ export default function RecommendResultScreen() {
                     console.log("쿠팡 구매 URL:", item.product_url);
                   }}
                 >
-                  <Text style={styles.linkButtonText}>선물 구매하기</Text>
-                  <ExternalLink
-                    size={14}
-                    color="#FF7096"
-                    style={{ marginLeft: 4 }}
-                  />
+                  <Text style={styles.linkButtonText}>선물 구매하기 🎁</Text>
                 </TouchableOpacity>
+                {/* 🌟 [추가] 쿠팡 파트너스 공정위 문구 배치 */}
+                <Text style={styles.coupangNotice}>
+                  ※ 쿠팡 파트너스 활동의 일환으로 구매 시 {"\n"} 일정액의
+                  수수료를 제공받습니다.
+                </Text>
               </View>
             ))
           ) : (
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF0F3",
     borderRadius: 16,
   },
-  linkButtonText: { fontSize: 13, fontWeight: "800", color: "#FF7096" },
+  linkButtonText: { fontSize: 14, fontWeight: "800", color: "#FF7096" },
 
   loaderBox: {
     padding: 30,
@@ -416,5 +416,14 @@ const styles = StyleSheet.create({
     color: "#AEAEB2",
     textAlign: "center",
     lineHeight: 18,
+  },
+  coupangNotice: {
+    fontSize: Platform.OS === "ios" ? 10.5 : 10, // 버튼 밑에 들어가는 각주(Footnote) 느낌이 나도록 살짝 더 작게
+    color: "#868e96", // 은은한 회색조
+    textAlign: "center", // 가운데 정렬
+    marginTop: 8, // 구매하기 버튼과의 간격 (너무 떨어지지 않게 슬쩍 붙여줌)
+    marginBottom: 4, // 상품 카드 맨 밑 테두리와의 여백
+    lineHeight: 14,
+    paddingHorizontal: 15,
   },
 });

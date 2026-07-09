@@ -6,11 +6,13 @@ import {
   CheckCircle2,
   ChevronRight,
   Gift,
+  NotepadText,
 } from "lucide-react-native";
 import React from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -145,8 +147,12 @@ export default function HistoryScreen() {
 
           {/* 📅 3. 히스토리 타임라인 리스트 영역 */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>📋 지난 기록들 </Text>
-
+            <View style={{ flexDirection: "row" }}>
+              <View style={{ marginTop: Platform.OS === "android" ? 5 : 1 }}>
+                <NotepadText size={23} color={"#FF7096"} />
+              </View>
+              <Text style={styles.sectionTitle}>지난 기록들 </Text>
+            </View>
             {events.length > 0 ? (
               events.map((item) => {
                 // 날짜 포맷 수정 (2026-05-14T... -> 2026년 05월 14일)
@@ -168,9 +174,11 @@ export default function HistoryScreen() {
                         <Text style={styles.cardEmoji}>{emoji}</Text>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.cardTitle} numberOfLines={1}>
-                            {item.recipient_name} / {item.purpose_display}
+                            {item.recipient_name}
                           </Text>
-                          <Text style={styles.cardDate}>{displayDate}</Text>
+                          <Text style={styles.cardDate}>
+                            {item.purpose_display}
+                          </Text>
                         </View>
                       </View>
                       <View style={styles.successBadge}>
@@ -179,7 +187,7 @@ export default function HistoryScreen() {
                           color="#FF7096"
                           style={{ marginRight: 4 }}
                         />
-                        <Text style={styles.successText}>추천 완료</Text>
+                        <Text style={styles.successText}> AI 추천 완료</Text>
                       </View>
                     </View>
 

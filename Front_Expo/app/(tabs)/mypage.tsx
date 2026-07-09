@@ -83,7 +83,7 @@ export default function MyPageScreen() {
     onSuccess: async () => {
       await SecureStore.deleteItemAsync("userToken");
       Alert.alert(
-        "탈퇴 완료 🌊",
+        "탈퇴 완료",
         "그동안 서비스를 이용해 주셔서 진심으로 감사드립니다.",
       );
       router.replace("/login");
@@ -176,10 +176,8 @@ export default function MyPageScreen() {
             <View style={styles.profileTextSide}>
               <View style={styles.badgeRow}>
                 <View style={styles.bubbleTag}>
-                  <Text style={styles.bubbleTagText}>
-                    {profile?.nickname
-                      ? `반가워요 ${profile.nickname}님✨`
-                      : "반가워요 ✨"}
+                  <Text style={styles.bubbleTagText} numberOfLines={1}>
+                    {profile?.nickname && `반가워요 👋`}
                   </Text>
                 </View>
               </View>

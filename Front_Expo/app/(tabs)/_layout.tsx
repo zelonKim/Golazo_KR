@@ -12,7 +12,7 @@ export default function TabLayout() {
   const tabBarHeight =
     Platform.OS === "ios"
       ? 54 + insets.bottom
-      : 62 + (insets.bottom > 0 ? insets.bottom : 12);
+      : 68 + (insets.bottom > 0 ? insets.bottom : 12);
 
   return (
     <Tabs

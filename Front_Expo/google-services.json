@@ -12,7 +12,20 @@
           "package_name": "com.zelon.golazo"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "98991306295-mhv6t76alflm4t0rrj4u8f2fbres67un.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zelon.golazo",
+            "certificate_hash": "13ffdeee41c58897cf15cad84517baa69ce51d6d"
+          }
+        },
+        {
+          "client_id": "98991306295-v4vpr6ecbiu0k29umjm70h01g1d9jis0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCL21CTdNdcwuNVFDyYAd_Z-lXzPq5iGRQ"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "98991306295-v4vpr6ecbiu0k29umjm70h01g1d9jis0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "98991306295-lovlqprpttnq8j8cnnmubtqjmgtofr1o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.zelon.golazo"
+              }
+            }
+          ]
         }
       }
     }

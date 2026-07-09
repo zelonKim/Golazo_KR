@@ -12,7 +12,8 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "ios": { "buildConfiguration": "Release" },
+      "android": { "buildConfiguration": "Release" }
     }
   },
   "submit": {
