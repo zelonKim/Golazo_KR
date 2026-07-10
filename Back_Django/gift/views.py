@@ -494,3 +494,94 @@ class DateMemoDetailView(APIView):
             {"message": f"'{memo_name}'님에 대한 메모가 정상적으로 삭제되었습니다."},
             status=status.HTTP_200_OK,
         )
+
+
+###########################################
+
+
+
+class GiftQuickRecommendView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        age_group = request.data.get("age_group")
+        gender = request.data.get("gender")
+        mbti = request.data.get("mbti")
+        hobbies = request.data.get("hobbies")
+        notes = request.data.get("notes")
+        purpose = request.data.get("purpose")
+        min_budget = request.data.get("min_budget", 0)
+        max_budget = request.data.get("max_budget", 9999999)
+
+        # 2. FastAPI 엔진으로 전달할 데이터 조립
+        fastapi_url = (
+            os.environ.get("FASTAPI_URL") + "api/v1/recommend"
+        )
+        
+        payload = {
+            "age_group": age_group,
+            "gender": gender,
+            "mbti": mbti,
+            "hobbies": hobbies,
+            "notes": notes,
+            "purpose": purpose,
+            "min_budget": min_budget,
+            "max_budget": max_budget,
+        }
+
+        try:
+            # 3. AI 모델 서버(FastAPI)와 통신
+            response = requests.post(fastapi_url, json=payload, timeout=15)
+            if response.status_code != 200:
+                return Response(
+                    {"error": "AI 엔진 서버 에러", "details": response.text},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            recommendations = response.json()
+            response_data = []
+
+            # 4. 추천 결과를 돌며 쿠팡/네이버 상품 매칭 프로세스 수행
+            for prod in recommendations:
+                product_name = prod.get("product_name")
+
+                # 기존 뷰 로직 구조 이식 (15만원 실적 전까진 내부 분기에 따라 네이버/쿠팡 스위칭)
+                coupang_info = get_coupang_product(
+                    search_keyword=product_name,
+                    min_budget=min_budget,
+                    max_budget=max_budget,
+                )
+
+                final_price = (
+                    coupang_info["price"]
+                    if coupang_info["price"] > 0
+                    else prod.get("product_price", 0)
+                )
+                final_product_name = (
+                    coupang_info["product_name"]
+                    if coupang_info["product_name"]
+                    else prod.get("product_name", "")
+                )
+
+                prod_dict = {
+                    "product_name": final_product_name,
+                    "product_price": final_price,
+                    "recommendation_reason": prod.get("recommendation_reason", ""),
+                    "product_url": coupang_info["product_url"],
+                    "image_url": coupang_info["image_url"],
+                }
+                response_data.append(prod_dict)
+
+            return Response(
+                {
+                    "message": "AI 빠른 추천 및 상품 매칭 성공!",
+                    "recommendations": response_data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": "AI 엔진 서버 연결 실패", "details": str(e)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )

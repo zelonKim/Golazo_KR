@@ -68,7 +68,7 @@ def get_coupang_product(search_keyword, min_budget=0, max_budget=99999999):
     """
     # 1. 최악의 상황을 대비한 기본 안전 가드값 계산 (예산의 중간값)
     fallback_price = int(min_budget + max_budget) // 2
-    image_url = "https://picsum.photos/400/400"
+    image_url = None
 
     client_id = os.environ.get("NAVER_CLIENT_ID")
     client_secret = os.environ.get("NAVER_CLIENT_SECRET")
@@ -146,8 +146,8 @@ def get_coupang_product(search_keyword, min_budget=0, max_budget=99999999):
                 f"✨ [강제 안전 보정 성공]: {final_product_name} 제품 확보 완료! 가격 안전화 -> {final_price}원 조절"
             )
         else:
-            # 네이버 쇼핑에 검색 결과 자체가 0건인 초유의 사태용 최종 가드
-            final_product_name = f"{search_keyword} (인기 추천 상품)"
+            # 네이버 쇼핑에 검색 결과 자체가 0건인 경우 최종 가드
+            final_product_name = f"{search_keyword}"
             final_price = fallback_price
 
     else:

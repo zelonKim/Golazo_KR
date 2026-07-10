@@ -15,7 +15,7 @@ client = OpenAI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 테스트 단계에서는 전체 허용, 추후 관리
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,7 +46,7 @@ async def get_recommendation(request: RecommendRequest):
             - 필수 예산 범위: 최소 {request.min_budget:,}원 이상 ~ 최대 {request.max_budget:,}원 이하 (이 범위를 절대 벗어나면 안 됨)
             - MBTI: {request.mbti or "모름"}
             - 취미: {request.hobbies or "모름"}
-            - 특이사항(좋아하는 것 / 싫어하는 것): {request.notes or "모름"}
+            - 특이 사항: {request.notes or "모름"}
 
             [ 주의 사항 ]
             1. product_name 필드에는 검색창에 쳤을 때 반드시 유저의 [필수 예산 범위: {request.min_budget:,}원 ~ {request.max_budget:,}원] 내부의 실제 판매가가 매칭될 만한 구체적인 단어로 조합하세요.

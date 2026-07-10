@@ -6,6 +6,7 @@ import * as SecureStore from "expo-secure-store";
 import {
   Gift,
   Heart,
+  Info,
   LogOut,
   Settings,
   User,
@@ -171,7 +172,7 @@ export default function MyPageScreen() {
         <View style={styles.cloudCard}>
           <View style={styles.profileMainRow}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarEmoji}>🎁</Text>
+              <Text style={styles.avatarEmoji}>🤖</Text>
             </View>
             <View style={styles.profileTextSide}>
               <View style={styles.badgeRow}>
@@ -241,28 +242,6 @@ export default function MyPageScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* 기념일 푸시 알림 */}
-          {/* <View style={styles.cuteListItem}>
-            <View style={styles.listItemLeft}>
-              <View style={styles.heartIconBg}>
-                <Settings size={16} color="#FF7096" />
-              </View>
-              <View>
-                <Text style={styles.listItemName}>기념일 푸시 알림</Text>
-                <Text style={styles.listItemSubText}>
-                  소중한 날 똑똑하게 받아보기
-                </Text>
-              </View>
-            </View>
-            <Switch
-              trackColor={{ false: "#E5E5EA", true: "#FFE3EB" }}
-              thumbColor={isAlarmEnabled ? "#FF7096" : "#F2F2F7"}
-              ios_backgroundColor="#E5E5EA"
-              onValueChange={() => setIsAlarmEnabled(!isAlarmEnabled)}
-              value={isAlarmEnabled}
-            />
-          </View> */}
-
           {/* 로그아웃 버튼 */}
           <TouchableOpacity style={styles.cuteListItem} onPress={handleLogOut}>
             <View style={styles.listItemLeft}>
@@ -274,6 +253,23 @@ export default function MyPageScreen() {
                 <Text style={styles.listItemSubText}>
                   현재 기기에서 계정 나가기
                 </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          {/* 개인 정보 처리 방침*/}
+          <TouchableOpacity>
+            <View style={styles.cuteListItem}>
+              <View style={styles.listItemLeft}>
+                <View style={styles.heartIconBg}>
+                  <Info size={16} color="#FF7096" />
+                </View>
+                <View>
+                  <Text style={styles.listItemName}>개인정보 처리방침</Text>
+                  <Text style={styles.listItemSubText}>
+                    앱에서 수집된 정보 알아보기
+                  </Text>
+                </View>
               </View>
             </View>
           </TouchableOpacity>

@@ -9,6 +9,7 @@ from .views import (
     GiftRecommendView,
     RecommendedProductDetailView,
     RecommendedProductListView,
+    GiftQuickRecommendView,
 )
 
 urlpatterns = [
@@ -54,5 +55,11 @@ urlpatterns = [
         "date-memo/<int:memo_id>/",
         DateMemoDetailView.as_view(),
         name="date-memo_read_update_delete",
+    ),
+    # 5. 빠른 선물 추천
+    path(
+        "quick/recommend/",
+        GiftQuickRecommendView.as_view(),
+        name="gift-quick-recommend",
     ),
 ]
