@@ -67,7 +67,7 @@ def get_coupang_product(search_keyword, min_budget=0, max_budget=99999999):
     카테고리 매칭을 유지하면서 가격만 안전값으로 강제 변환하는 철벽 방어 시스템
     """
     # 1. 최악의 상황을 대비한 기본 안전 가드값 계산 (예산의 중간값)
-    fallback_price = int(min_budget + max_budget) // 2
+    fallback_price = 0
     image_url = None
 
     client_id = os.environ.get("NAVER_CLIENT_ID")

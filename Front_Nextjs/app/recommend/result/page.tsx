@@ -94,7 +94,7 @@ export default function RecommendResultPage() {
                   />
                 ) : (
                   <div className="w-24 h-24 bg-pink-50 rounded-xl flex items-center justify-center text-pink-400 text-xs font-semibold flex-shrink-0">
-                    <div className="text-[45px]">🛍️</div>
+                    <div className="text-[45px]">🎁</div>
                   </div>
                 )}
                 <div className="flex-1">
@@ -102,7 +102,9 @@ export default function RecommendResultPage() {
                     {item.product_name}
                   </h3>
                   <p className="text-pink-500 font-extrabold text-lg mt-1">
-                    {item.product_price.toLocaleString()}원
+                    {item.product_price === 0
+                      ? "변동"
+                      : `${item.product_price.toLocaleString()}원`}
                   </p>
                 </div>
               </div>
