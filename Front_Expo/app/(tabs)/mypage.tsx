@@ -1,6 +1,7 @@
 import { client } from "@/api/client";
 import { useTheme } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import {
@@ -18,6 +19,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   Keyboard,
   Modal,
   Platform,
@@ -172,13 +174,19 @@ export default function MyPageScreen() {
         <View style={styles.cloudCard}>
           <View style={styles.profileMainRow}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarEmoji}>🤖</Text>
+              <View style={styles.avatarEmoji}>
+                <Image
+                  source={require("../../assets/images/miniGifty.png")} // 상대 경로 확인 필요!
+                  style={{ width: 69, height: 69 }} // 이미지 크기(가로/세로)를 꼭 명시해줘야 보입니다!
+                  resizeMode="contain"
+                />
+              </View>
             </View>
             <View style={styles.profileTextSide}>
               <View style={styles.badgeRow}>
                 <View style={styles.bubbleTag}>
                   <Text style={styles.bubbleTagText} numberOfLines={1}>
-                    {profile?.nickname && `반가워요 👋`}
+                    반가워요 👋
                   </Text>
                 </View>
               </View>
@@ -209,7 +217,7 @@ export default function MyPageScreen() {
                 style={{ marginBottom: 4 }}
               />
               <Text style={styles.statNumber}>{totalRecipients}명</Text>
-              <Text style={styles.statLabel}>소중한 인맥</Text>
+              <Text style={styles.statLabel}>소중한 사람들</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -258,7 +266,9 @@ export default function MyPageScreen() {
           </TouchableOpacity>
 
           {/* 개인 정보 처리 방침*/}
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => Linking.openURL("https://www.golazo.kr/privacy")}
+          >
             <View style={styles.cuteListItem}>
               <View style={styles.listItemLeft}>
                 <View style={styles.heartIconBg}>

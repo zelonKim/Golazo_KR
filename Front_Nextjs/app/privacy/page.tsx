@@ -41,6 +41,57 @@ export default function PrivacyPage() {
         </p>
 
         <div className="space-y-8 text-sm text-slate-700 leading-relaxed">
+          {/* 계정 삭제 안내 (구글 플레이 스토어 심사용 필수 섹션) */}
+          <section className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
+            <h2 className="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
+              <span className="text-pink-500">📌</span> 계정 및 데이터 삭제 안내
+              (Account Deletion Notice)
+            </h2>
+
+            <div className="text-sm text-slate-700 space-y-3 leading-relaxed">
+              <p>
+                <strong>Golazo</strong>는 사용자의 개인정보와 데이터 주권을
+                존중합니다. 앱 내에서 회원 탈퇴가 어렵거나 계정 및 관련 데이터의
+                영구 삭제를 원하실 경우, 아래의 방법을 통해 간편하게 삭제를
+                요청하실 수 있습니다.
+              </p>
+
+              <ul className="list-disc list-inside space-y-1.5 pl-1 text-slate-600">
+                <li>
+                  <span className="font-semibold text-slate-800">
+                    신청 방법:
+                  </span>{" "}
+                  하단의 담당자 이메일로 가입하신 계정 정보와 함께 삭제 요청
+                  메일을 발송해 주세요.
+                </li>
+                <li>
+                  <span className="font-semibold text-slate-800">
+                    처리 기간:
+                  </span>{" "}
+                  요청 접수 후 업무일 기준{" "}
+                  <span className="text-pink-600 font-bold">2~3일 이내</span>에
+                  모든 개인정보 및 서비스 데이터가 영구적으로 파기됩니다.
+                </li>
+                <li>
+                  <span className="font-semibold text-slate-800">
+                    담당자 이메일:
+                  </span>{" "}
+                  <a
+                    href="mailto:seongjin.dev@gmail.com"
+                    className="text-pink-600 underline font-semibold"
+                  >
+                    ksz18601@gmail.com
+                  </a>
+                </li>
+              </ul>
+
+              <p className="text-xs text-slate-400 mt-2 italic border-t border-slate-200 pt-2">
+                * If you wish to delete your Golazo account and all associated
+                data, please contact us at the email above. Your data will be
+                permanently deleted within 2-3 business days.
+              </p>
+            </div>
+          </section>
           {/* 1항 */}
           <section>
             <h2 className="text-base font-black text-slate-900 mb-2 flex items-center gap-1.5">
@@ -81,15 +132,15 @@ export default function PrivacyPage() {
               제공, 서비스 부정 이용 방지 목적에 한해서만 활용됩니다.
             </p>
             <p className="text-slate-800 font-bold bg-pink-50/30 border border-pink-100/60 p-3 rounded-xl text-xs">
-              📌 보유 및 이용 기간: 이용자의 개인정보는 원칙적으로 회원 탈퇴
+              * 보유 및 이용 기간: 이용자의 개인정보는 원칙적으로 회원 탈퇴
               시까지 보유하며, 회원 탈퇴 즉시 아래 파기 절차에 따라 영구
               삭제됩니다.
             </p>
           </section>
 
           {/* 3항 */}
-          <section className="bg-gradient-to-br from-pink-50/60 to-rose-50/60 border border-pink-100 rounded-2xl p-5 sm:p-6 shadow-xs">
-            <h2 className="text-base font-black text-pink-950 mb-3 flex items-center gap-1.5">
+          <section className="py-2">
+            <h2 className="text-base font-black text-slate-900 mb-3 flex items-center gap-1.5">
               <span className="text-pink-600">3.</span> 개인정보의 파기 절차 및
               방법 (회원 탈퇴)
             </h2>

@@ -9,11 +9,16 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://golazo-production-b424.up.railway.app/"
+      }
     },
     "production": {
       "ios": { "buildConfiguration": "Release" },
-      "android": { "buildConfiguration": "Release" }
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://golazo-production-b424.up.railway.app/"
+      }
     }
   },
   "submit": {

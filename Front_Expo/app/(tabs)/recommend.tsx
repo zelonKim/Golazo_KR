@@ -129,14 +129,14 @@ export default function RecommendScreen() {
       >
         {/* 🚨 [정석 서순 2] 허공 터치 시 키보드 dismiss 레이어를 스크롤뷰 위에 얹어줍니다. */}
 
-
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled" // 💡 배지나 버튼 누를 때 키보드 때문에 터치가 한 번 씹히는 걸 방지해줍니다!
         >
           <View style={styles.formContainer}>
-            <Text style={styles.mainTitle}>누구를 위한 선물인가요? ✨</Text>
+            <Text style={styles.mainTitle}>누구를 위한 선물인가요? 🎁</Text>
+
             <Text style={styles.mainSub}>
               선물 대상과 이벤트를 등록하고 AI에게 {"\n"}최적의 선물을 추천
               받아보세요.
@@ -266,14 +266,15 @@ export default function RecommendScreen() {
               {createEventMutation.isPending ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.modalSubmitButtonText}>
-                  선물 추천받기 🤖
-                </Text>
+                <>
+                  <Text style={styles.modalSubmitButtonText}>
+                    선물 추천받기
+                  </Text>
+                </>
               )}
             </TouchableOpacity>
           </View>
         </ScrollView>
-   
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
