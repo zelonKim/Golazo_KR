@@ -141,13 +141,13 @@ export default function RecommendResultPage() {
         {/* 💖 아기자기 솜사탕! 젤리처럼 누르고 싶은 모바일 앱 유도 카드 (CTA) */}
         <div className="mt-14 bg-gradient-to-br from-pink-300 via-rose-100 to-amber-200 rounded-[32px] p-8 text-center text-slate-800 shadow-[0_20px_50px_rgba(244,63,94,0.15)] relative overflow-hidden  shadow-pink-200">
           {/* 🎀 상단 앙증맞은 리본/스파클 배지 */}
-          <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-400 to-pink-500 text-white text-[11px] font-black tracking-wider px-3.5 py-1.5 rounded-full mb-5 shadow-md shadow-rose-200 animate-bounce">
-            <span></span> for my People <span></span>
+          <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-400 to-pink-500 text-white text-[13px] font-black tracking-wider px-3.5 py-1.5 rounded-full mb-5 shadow-md shadow-rose-200 animate-bounce">
+            <span></span> 지금 바로 다운로드 <span></span>
           </div>
 
           {/* 헤드라인 타이틀 */}
           <h3 className="text-2xl font-black mb-3 tracking-tight text-slate-900 drop-shadow-xs">
-            소중한 사람들을 위한 선물 추천은{" "}
+            소중한 사람들을 위한 🎁선물은{" "}
             <span className="relative inline-block text-rose-500">
               <span className="relative z-10 font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-rose-500">
                 Golazo 앱
@@ -170,7 +170,7 @@ export default function RecommendResultPage() {
               onClick={() =>
                 alert("구글플레이 심사 중입니다. 조금만 기다려주세요 🤗 ")
               }
-              className="hover:scale-101"
+              className="hover:scale-103"
             >
               <Image
                 src="/images/playStore.png"
@@ -185,7 +185,7 @@ export default function RecommendResultPage() {
               onClick={() =>
                 alert("앱스토어 심사 중입니다. 조금만 기다려주세요 🤗 ")
               }
-              className="hover:scale-101"
+              className="hover:scale-103"
             >
               <Image
                 src="/images/appStore.svg"
@@ -199,7 +199,7 @@ export default function RecommendResultPage() {
 
           <button
             onClick={() => router.push("/")}
-            className="text-[13px] text-slate-600  font-bold hover:text-pink-500 transition-all duration-200 mt-9 inline-flex items-center gap-1.5 transform hover:scale-101 active:scale-95 cursor-pointer"
+            className="text-[13px] text-slate-600  font-bold hover:text-pink-500 transition-all duration-200 mt-8 inline-flex items-center gap-1.5 transform hover:scale-101 active:scale-95 cursor-pointer"
           >
             <span> 🧸 첫 화면으로</span>
           </button>
