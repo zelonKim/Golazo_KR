@@ -78,6 +78,7 @@ class EventHistorySerializer(serializers.ModelSerializer):
             "min_budget",
             "max_budget",
             "recipient_name",
+            "created_at",
         ]
 
 

@@ -195,7 +195,7 @@ export default function HistoryScreen() {
                           color="#FF7096"
                           style={{ marginRight: 4 }}
                         />
-                        <Text style={styles.successText}> AI 추천 완료</Text>
+                        <Text style={styles.successText}>{displayDate}</Text>
                       </View>
                     </View>
 
