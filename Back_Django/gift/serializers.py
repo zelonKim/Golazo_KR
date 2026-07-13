@@ -35,7 +35,14 @@ class EventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ["id", "purpose", "purpose_display", "min_budget", "max_budget"]
+        fields = [
+            "id",
+            "purpose",
+            "purpose_display",
+            "min_budget",
+            "max_budget",
+            "created_at",
+        ]
 
         read_only_fields = ["id"]
 
@@ -65,6 +72,7 @@ class RecommendedProductSerializer(serializers.ModelSerializer):
             "recommendation_reason",
             "search_keyword",
             "status",
+            "created_at",
         ]
 
 

@@ -87,6 +87,8 @@ export default function HistoryScreen() {
   // 📊 대시보드용 통계 데이터 실시간 계산 (평탄화된 events 리스트 기반)
   const totalCount = events.length;
 
+  console.log(events);
+
   const totalMinBudget = events.reduce(
     (sum: number, item: any) => sum + (item.min_budget || 0),
     0,
@@ -162,7 +164,6 @@ export default function HistoryScreen() {
             </View>
             {events.length > 0 ? (
               events.map((item) => {
-                // 날짜 포맷 수정 (2026-05-14T... -> 2026년 05월 14일)
                 const displayDate = item.created_at
                   ? new Date(item.created_at).toLocaleDateString("ko-KR", {
                       year: "numeric",
