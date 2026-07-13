@@ -1,7 +1,7 @@
 import { client } from "@/api/client";
 import { useTheme } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit2, Plus, Trash2, User, UserPlus, X } from "lucide-react-native";
+import { Edit2, Plus, Trash2, User, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -425,11 +425,11 @@ export default function RecipientScreen() {
                   </View>
 
                   {/* 필드 1: 이름 */}
-                  <Text style={styles.inputLabel}>이름</Text>
+                  <Text style={styles.inputLabel}>👋 이름 및 별명</Text>
                   <View style={styles.inputWrapper}>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="지인의 이름을 적어주세요"
+                      placeholder="예: 준호, 남친, 곰돌이, 엄마 등"
                       placeholderTextColor="#AEAEB2"
                       value={name}
                       onChangeText={setName}
@@ -437,7 +437,7 @@ export default function RecipientScreen() {
                   </View>
 
                   {/* 필드 2: 성별 */}
-                  <Text style={styles.inputLabel}>성별</Text>
+                  <Text style={styles.inputLabel}>🧬 성별</Text>
                   <View style={styles.choiceRow}>
                     <TouchableOpacity
                       style={[
@@ -474,7 +474,7 @@ export default function RecipientScreen() {
                   </View>
 
                   {/* 필드 3: 나이대 (한눈에 보이는 Grid 3x3 구조) */}
-                  <Text style={styles.inputLabel}>나이대</Text>
+                  <Text style={styles.inputLabel}>🎂 나이대</Text>
                   <View style={styles.gridContainer}>
                     {ageGroups.map((age) => (
                       <TouchableOpacity
@@ -499,7 +499,7 @@ export default function RecipientScreen() {
 
                   {/* 필드 4: MBTI 선택 UI (4지선다 조합형) */}
                   <Text style={[styles.inputLabel, { marginTop: 8 }]}>
-                    MBTI (선택)
+                    🔮 MBTI (생략 가능)
                   </Text>
                   <View style={styles.mbtiContainer}>
                     {/* E vs I */}
@@ -646,12 +646,12 @@ export default function RecipientScreen() {
 
                   {/* 필드 5: 취미 */}
                   <Text style={[styles.inputLabel, { marginTop: 16 }]}>
-                    취미 및 관심사 (선택)
+                    🎨 취미 및 관심사 (생략 가능)
                   </Text>
                   <View style={styles.inputWrapper}>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="예) 독서, 축구, 요리 등"
+                      placeholder="예: 독서, 등산, 홈카페 등"
                       placeholderTextColor="#AEAEB2"
                       value={hobbies}
                       onChangeText={setHobbies}
@@ -659,7 +659,7 @@ export default function RecipientScreen() {
                   </View>
 
                   {/* 필드 6: 특이사항 */}
-                  <Text style={styles.inputLabel}>특이사항 (선택)</Text>
+                  <Text style={styles.inputLabel}>⭐️ 특이사항 (생략 가능)</Text>
                   <View
                     style={[
                       styles.inputWrapper,
@@ -668,7 +668,7 @@ export default function RecipientScreen() {
                   >
                     <TextInput
                       style={styles.textInput}
-                      placeholder="핑크색을 좋아함, 파란색을 싫어함 등"
+                      placeholder="예: 향수 냄새를 싫어함, 고양이를 키우고 있음 등"
                       placeholderTextColor="#AEAEB2"
                       multiline
                       numberOfLines={3}
@@ -683,13 +683,8 @@ export default function RecipientScreen() {
                     onPress={handleSave}
                   >
                     <Text style={styles.modalSubmitButtonText}>
-                      {editingRecipient ? "변경사항 저장하기" : "지인 추가하기"}
+                      {editingRecipient ? "변경하기" : "등록하기"}
                     </Text>
-                    <UserPlus
-                      size={16}
-                      color="white"
-                      style={{ marginLeft: 6 }}
-                    />
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -834,11 +829,11 @@ const styles = StyleSheet.create({
     borderColor: "#F6F6FA",
     paddingHorizontal: 16,
     height: 50,
-    marginBottom: 16,
+    marginBottom: 24,
   },
   textInput: { flex: 1, fontSize: 13, fontWeight: "600", color: "#2D2D3A" },
 
-  choiceRow: { flexDirection: "row", marginBottom: 16 },
+  choiceRow: { flexDirection: "row", marginBottom: 24 },
   choiceBadge: {
     flex: 1,
     alignItems: "center",
@@ -886,6 +881,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#F6F6FA",
+    marginBottom: 12,
   },
   mbtiColumn: {
     flex: 1,

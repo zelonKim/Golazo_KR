@@ -132,10 +132,9 @@ export default function HomeScreen() {
     },
   });
 
-  // 🚀 3. 🆕 useMutation: 스마트폰 기기 푸시 토큰 백엔드로 전송 (POST)
+  // 🚀 3. useMutation: 스마트폰 기기 푸시 토큰 백엔드로 전송 (POST)
   const savePushTokenMutation = useMutation({
     mutationFn: async (token: string) => {
-      // 엔드포인트 주소는 장고 백엔드 API 설계명에 맞게 편하게 커스텀하세요!
       return await client.post("user/push-token/", { token });
     },
     onSuccess: () => {
@@ -149,40 +148,47 @@ export default function HomeScreen() {
     },
   });
 
-  // 💡 🆕 초동 로드 시 알림 권한 획득 및 토큰 추출 프로세스 기동
+  // 🚀 4. useMutation: 기념일 메모 삭제(DELETE)하기
+  const deleteMemoMutation = useMutation({
+    mutationFn: async (memoId: number) => {
+      const response = await client.delete(`gift/date-memo/${memoId}/`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dateMemos"] });
+    },
+    onError: (error: any) => {
+      console.error("기념일 삭제 실패:", error.response?.data);
+      Alert.alert("삭제 실패", "메모를 삭제하는 도중 문제가 발생했습니다.");
+    },
+  });
+
+  // 💡 초동 로드 시 알림 권한 획득 및 토큰 추출 프로세스 기동
   useEffect(() => {
     async function setupNotifications() {
-      // 에뮬레이터나 시뮬레이터 브라우저 기기 격리 처리
       if (!Device.isDevice) {
         console.log("➡️ 시뮬레이터 환경에서는 푸시 토큰 발급이 제한됩니다.");
         return;
       }
 
-      // 1. 기존 권한 검사
       const { status: existingStatus } =
         await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      // 2. 최초 진입 시 권한이 없다면 스마트폰 상단 팝업 띄우기
       if (existingStatus !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      // 3. 유저가 끝내 거부했을 때 방어 코드
       if (finalStatus !== "granted") {
         console.log("➡️ 사용자가 푸시 알림을 거부했습니다.");
         return;
       }
 
-      // 4. 기기 고유의 Expo Push Token 발급 받기
       try {
         const tokenData = await Notifications.getDevicePushTokenAsync();
-
-        console.log("📡 구글/애플 공인 순수 디바이스 토큰:", tokenData.data);
         savePushTokenMutation.mutate(tokenData.data);
 
-        // 안드로이드 기기일 경우 진동/소리 채널 최적화 마감
         if (Platform.OS === "android") {
           Notifications.setNotificationChannelAsync("default", {
             name: "default",
@@ -211,6 +217,22 @@ export default function HomeScreen() {
     });
   };
 
+  // 🗑️ 길게 꾹 눌렀을 때 작동할 삭제 컴펌 알림
+  const handleLongPress = (memoId: number, content: string) => {
+    Alert.alert(
+      "특별한 날 삭제",
+      `'${content}-${memoId}'을 삭제하시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제하기",
+          style: "destructive",
+          onPress: () => deleteMemoMutation.mutate(memoId),
+        },
+      ],
+    );
+  };
+
   // 👑 목록 중 d_day가 가장 가까운 메인 디데이 타겟 설정
   const mainDDay = anniversaries.length > 0 ? anniversaries[0] : null;
 
@@ -222,9 +244,6 @@ export default function HomeScreen() {
       {/* 1. 상단 헤더 */}
       <View style={styles.header}>
         <Text style={styles.logoText}>Special Day</Text>
-        {/* <TouchableOpacity style={styles.iconButton}>
-          <Settings size={20} color="#5C5C62" />
-        </TouchableOpacity> */}
       </View>
 
       {/* 로딩 인디케이터 처리 */}
@@ -245,7 +264,9 @@ export default function HomeScreen() {
               {/* 데이터가 있을 때: 상단 카드 + 다가오는 목록 노출 */}
               <View style={styles.cloudCard}>
                 <View style={styles.bubbleTag}>
-                  <Text style={styles.bubbleTagText}>곧 다가오는 특별한 날 🎉</Text>
+                  <Text style={styles.bubbleTagText}>
+                    곧 다가오는 특별한 날 🎉
+                  </Text>
                 </View>
 
                 <Text style={styles.mainCardTitle}>{mainDDay.content} </Text>
@@ -277,7 +298,13 @@ export default function HomeScreen() {
                 </View>
 
                 {anniversaries.map((item) => (
-                  <TouchableOpacity key={item.id} style={styles.cuteListItem}>
+                  /* ⭐️ 온터치에 onLongPress 바인딩 완료! */
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.cuteListItem}
+                    activeOpacity={0.7}
+                    onLongPress={() => handleLongPress(item.id, item.content)}
+                  >
                     <View style={styles.listItemLeft}>
                       <View style={styles.heartIconBg}>
                         <CalendarIcon size={16} color="#FF7096" />
@@ -289,6 +316,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                     </View>
+
                     <View style={styles.cuteDDayBadge}>
                       <Text style={styles.cuteDDayText}>
                         {item.d_day === 0 ? "D-Day" : `D-${item.d_day}`}
@@ -343,11 +371,10 @@ export default function HomeScreen() {
         }}
       >
         <KeyboardAvoidingView
-          // 🌟 [수정 2] iOS는 padding, 안드로이드는 네이티브 매커니즘(height 또는 생략) 분기 슛!
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.select({
-            ios: -80, // 헤더나 탭바 높이에 맞춰 오프셋 보정
+            ios: -80,
             android: -60,
           })}
         >
@@ -490,7 +517,6 @@ export default function HomeScreen() {
   );
 }
 
-// 스타일 시트는 완전 동일하므로 하단부 보존 상태로 생략합니다!
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -507,17 +533,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#FF7096",
     fontStyle: "italic",
-  },
-  iconButton: {
-    padding: 10,
-    backgroundColor: "#FFF",
-    borderRadius: 50,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    marginTop: -5,
   },
   scrollContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
   centerScrollContent: {
@@ -606,7 +621,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    padding: 16,
+    padding: 16, // 원래대로 균형 잡힌 패딩으로 복구
     borderRadius: 24,
     marginBottom: 12,
     borderWidth: 1.5,

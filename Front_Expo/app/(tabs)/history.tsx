@@ -1,13 +1,7 @@
 import { client } from "@/api/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect } from "expo-router";
-import {
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Gift,
-  NotepadText,
-} from "lucide-react-native";
+import { Calendar, ChevronRight, Gift, NotepadText } from "lucide-react-native";
 import React from "react";
 import {
   ActivityIndicator,
@@ -86,8 +80,6 @@ export default function HistoryScreen() {
 
   // 📊 대시보드용 통계 데이터 실시간 계산 (평탄화된 events 리스트 기반)
   const totalCount = events.length;
-
-  console.log(events);
 
   const totalMinBudget = events.reduce(
     (sum: number, item: any) => sum + (item.min_budget || 0),
@@ -184,18 +176,19 @@ export default function HistoryScreen() {
                           <Text style={styles.cardTitle} numberOfLines={1}>
                             {item.recipient_name}
                           </Text>
-                          <Text style={styles.cardDate}>
-                            {item.purpose_display}
-                          </Text>
+                          <Text style={styles.cardDate}>{displayDate}</Text>
                         </View>
                       </View>
                       <View style={styles.successBadge}>
-                        <CheckCircle2
+                        <Gift
                           size={14}
                           color="#FF7096"
                           style={{ marginRight: 4 }}
                         />
-                        <Text style={styles.successText}>{displayDate}</Text>
+                        <Text style={styles.successText}>
+                          {" "}
+                          {item.purpose_display}
+                        </Text>
                       </View>
                     </View>
 
