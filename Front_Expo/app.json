@@ -2,7 +2,7 @@
   "expo": {
     "name": "Golazo",
     "slug": "Golazo",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "golazo",
@@ -13,6 +13,7 @@
       "backgroundColor": "#FFF0F2"
     },
     "ios": {
+      "buildNumber": "2",
       "supportsTablet": true,
       "bundleIdentifier": "com.zelon.golazo",
       "googleServicesFile": "./GoogleService-Info.plist",
