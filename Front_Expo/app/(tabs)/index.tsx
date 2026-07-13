@@ -158,7 +158,8 @@ export default function HomeScreen() {
       queryClient.invalidateQueries({ queryKey: ["dateMemos"] });
     },
     onError: (error: any) => {
-      console.error("기념일 삭제 실패:", error.response?.data);
+      console.error("❌ 백엔드 에러 상태 코드:", error.response?.status);
+      console.error("❌ 백엔드 에러 상세 내용:", error.response?.data);
       Alert.alert("삭제 실패", "메모를 삭제하는 도중 문제가 발생했습니다.");
     },
   });

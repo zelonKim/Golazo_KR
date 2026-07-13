@@ -487,17 +487,15 @@ class DateMemoDetailView(APIView):
         if memo.user != request.user:
             raise PermissionDenied("해당 메모를 삭제할 권한이 없습니다.")
 
-        memo_name = memo.name
         memo.delete()
 
         return Response(
-            {"message": f"'{memo_name}'님에 대한 메모가 정상적으로 삭제되었습니다."},
+            {"message": f"해당 메모가 정상적으로 삭제되었습니다."},
             status=status.HTTP_200_OK,
         )
 
 
 ###########################################
-
 
 
 class GiftQuickRecommendView(APIView):
@@ -514,10 +512,8 @@ class GiftQuickRecommendView(APIView):
         max_budget = request.data.get("max_budget", 9999999)
 
         # 2. FastAPI 엔진으로 전달할 데이터 조립
-        fastapi_url = (
-            os.environ.get("FASTAPI_URL") + "api/v1/recommend"
-        )
-        
+        fastapi_url = os.environ.get("FASTAPI_URL") + "api/v1/recommend"
+
         payload = {
             "age_group": age_group,
             "gender": gender,
