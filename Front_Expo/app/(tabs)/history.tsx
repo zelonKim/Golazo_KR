@@ -1,10 +1,11 @@
 import { client } from "@/api/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect } from "expo-router";
 import { Calendar, ChevronRight, Gift, NotepadText } from "lucide-react-native";
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Platform,
   ScrollView,
@@ -61,16 +62,35 @@ export default function HistoryScreen() {
     }, [queryClient]),
   );
 
-  // 🔍 2. 중첩된 구조(User -> Recipient -> Event)에서 역참조된 이벤트들만 일렬로 평탄화(Flat) 추출
+  // 🚀 2. 🆕 useMutation: 이벤트(추천 기록) 삭제(DELETE)하기
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const response = await client.delete(`gift/event/${eventId}/`);
+      return response.data;
+    },
+    onSuccess: () => {
+      // 삭제 성공 시 유저 프로필 쿼리를 무효화하여 대시보드와 리스트를 실시간 갱신!
+      queryClient.invalidateQueries({ queryKey: ["userProfileHistory"] });
+    },
+    onError: (error: any) => {
+      console.error(
+        "추천 기록 삭제 실패:",
+        error.response?.data || error.message,
+      );
+      Alert.alert("삭제 실패 🥲", "기록을 삭제하는 도중 문제가 발생했습니다.");
+    },
+  });
+
+  // 🔍 3. 중첩된 구조(User -> Recipient -> Event)에서 역참조된 이벤트들만 일렬로 평탄화(Flat) 추출
   const events = React.useMemo(() => {
     if (!userProfile || !userProfile.recipients) return [];
 
-    // 1. 유저가 가진 모든 지인들의 events 배열을 하나로 합침
+    // 유저가 가진 모든 지인들의 events 배열을 하나로 합침
     const flatEvents = userProfile.recipients.flatMap(
       (recipient: any) => recipient.events || [],
     );
 
-    // 2. 🔥 최신순 정렬 (created_at이 큰/최신 날짜가 맨 앞으로 오도록 정렬)
+    // 최신순 정렬 (created_at이 큰/최신 날짜가 맨 앞으로 오도록 정렬)
     return [...flatEvents].sort((a: any, b: any) => {
       const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
       const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -97,6 +117,18 @@ export default function HistoryScreen() {
       return `${(price / 10000).toFixed(1).replace(".0", "")}만원`;
     }
     return `${price.toLocaleString()}원`;
+  };
+
+  // 🗑️ 꾹 눌렀을 때 띄워줄 실수 방지용 삭제 컨펌 알림창
+  const handleLongPress = (eventId: number, name: string, purpose: string) => {
+    Alert.alert("⚠️삭제 확인 ", `정말로 해당 추천 기록을 삭제하시겠습니까?`, [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제하기",
+        style: "destructive",
+        onPress: () => deleteEventMutation.mutate(eventId),
+      },
+    ]);
   };
 
   return (
@@ -167,7 +199,19 @@ export default function HistoryScreen() {
                 const emoji = PURPOSE_EMOJIS[item.purpose] || "💝";
 
                 return (
-                  <View key={item.id} style={styles.historyCard}>
+                  /* ⭐️ 꾹 눌렀을 때 삭제 액션이 실행되도록 TouchableOpacity로 감싸고 매핑 완료! */
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.historyCard}
+                    activeOpacity={0.8}
+                    onLongPress={() =>
+                      handleLongPress(
+                        item.id,
+                        item.recipient_name,
+                        item.purpose_display,
+                      )
+                    }
+                  >
                     {/* 카드 상단: 이모지 + 타이틀 + 완료 체크 배지 */}
                     <View style={styles.cardHeaderRow}>
                       <View style={styles.titleLeft}>
@@ -186,7 +230,6 @@ export default function HistoryScreen() {
                           style={{ marginRight: 4 }}
                         />
                         <Text style={styles.successText}>
-                          {" "}
                           {item.purpose_display}
                         </Text>
                       </View>
@@ -220,7 +263,7 @@ export default function HistoryScreen() {
                         />
                       </View>
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 );
               })
             ) : (

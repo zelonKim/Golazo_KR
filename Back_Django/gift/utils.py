@@ -99,7 +99,7 @@ def get_coupang_product(search_keyword, min_budget=0, max_budget=99999999):
             "X-Naver-Client-Secret": client_secret,
         }
         try:
-            res = requests.get(url, headers=headers, timeout=5)
+            res = requests.get(url, headers=headers, timeout=1.5)
             if res.status_code == 200:
                 return res.json().get("items", [])
         except Exception as e:

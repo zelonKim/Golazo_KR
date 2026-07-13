@@ -220,18 +220,14 @@ export default function HomeScreen() {
 
   // 🗑️ 길게 꾹 눌렀을 때 작동할 삭제 컴펌 알림
   const handleLongPress = (memoId: number, content: string) => {
-    Alert.alert(
-      "특별한 날 삭제",
-      `'${content}-${memoId}'을 삭제하시겠습니까?`,
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "삭제하기",
-          style: "destructive",
-          onPress: () => deleteMemoMutation.mutate(memoId),
-        },
-      ],
-    );
+    Alert.alert("⚠️삭제 확인", `정말로 ${content}을 삭제하시겠습니까?`, [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제하기",
+        style: "destructive",
+        onPress: () => deleteMemoMutation.mutate(memoId),
+      },
+    ]);
   };
 
   // 👑 목록 중 d_day가 가장 가까운 메인 디데이 타겟 설정

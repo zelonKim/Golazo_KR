@@ -201,15 +201,12 @@ class EventDetailView(APIView):
         if event.recipient.user != request.user:
             raise PermissionDenied("해당 이벤트를 삭제할 권한이 없습니다.")
 
-        event_purpose = event.purpose
-        recipient_name = event.recipient.name
-
         # 2. DB에서 이벤트 깔끔하게 삭제
         event.delete()
 
         return Response(
             {
-                "message": f"'{recipient_name}'님의 '{event_purpose}' 이벤트가 성공적으로 삭제되었습니다."
+                "message": f"'해당 이벤트가 성공적으로 삭제되었습니다."
             },
             status=status.HTTP_200_OK,
         )
