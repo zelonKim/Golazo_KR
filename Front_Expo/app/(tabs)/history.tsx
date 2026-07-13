@@ -241,6 +241,7 @@ export default function HistoryScreen() {
                     <TouchableOpacity
                       style={styles.giftDetailRow}
                       onPress={() => {
+                        console.log("아이템 아이디", item.id);
                         router.push({
                           pathname: "/recommendResult",
                           params: { event_id: item.id },

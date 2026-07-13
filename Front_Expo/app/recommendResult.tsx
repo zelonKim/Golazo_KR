@@ -1,5 +1,5 @@
 import { client } from "@/api/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, CheckCircle, Gift, ShoppingBag } from "lucide-react-native";
 import React, { useEffect } from "react";
@@ -27,6 +27,8 @@ interface RecommendedProduct {
 }
 
 export default function RecommendResultScreen() {
+  const queryClient = useQueryClient();
+
   const params = useLocalSearchParams();
   const eventId = Number(params.event_id);
 
@@ -107,7 +109,7 @@ export default function RecommendResultScreen() {
       {/* 아기자기한 상단 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.push("/(tabs)/history")}
+          onPress={() => router.back()}
           style={styles.backButton}
         >
           <ArrowLeft size={22} color="#FF7096" strokeWidth={3} />
@@ -240,7 +242,7 @@ export default function RecommendResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingBottom: 24 },
+  container: { flex: 1, paddingBottom: 48 },
   header: {
     flexDirection: "row",
     justifyContent: "flex-start",

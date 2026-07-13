@@ -161,25 +161,20 @@ export default function RecommendResultScreen() {
           ))}
         </View>
 
-        {/* 💖 하단 홈 이동 버튼 */}
         <TouchableOpacity
-          style={styles.homeButton}
+          style={styles.saveSoftButton}
+          activeOpacity={0.7}
           onPress={() => {
             router.replace("/login");
             Alert.alert("안내", "로그인한 회원만 추천 결과 저장이 가능합니다.");
           }}
         >
-          <View style={{ flexDirection: "row" }}>
-            <Text style={styles.homeButtonText}>추천 결과 저장하기 </Text>
-            <BookmarkCheck
-              color={"#FF7096"}
-              size={22}
-              style={{
-                marginRight: 3,
-                marginTop: Platform.OS === "ios" ? 0 : 3,
-              }}
-            />
-          </View>
+          <BookmarkCheck
+            color={"#FF7096"}
+            size={20}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={styles.saveSoftButtonText}>추천 결과 저장하기</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -326,4 +321,22 @@ const styles = StyleSheet.create({
     borderBottomColor: "#FF7096",
   },
   highlightText: { color: "#FF7096" },
+  saveSoftButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFF0F3", // 부드러운 밀크 핑크 배경
+    borderWidth: 1.5,
+    borderColor: "#FFE3EB", // 은은한 테두리 가드
+    paddingVertical: 15,
+    borderRadius: 20,
+    width: "100%",
+    marginTop: 20,
+  },
+  saveSoftButtonText: {
+    color: "#FF7096", // 텍스트 컬러 포인팅
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
 });

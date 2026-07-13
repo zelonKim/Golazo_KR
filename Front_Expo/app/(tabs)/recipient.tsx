@@ -797,7 +797,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(45, 45, 58, 0.4)",
     justifyContent: "center",
   },
-  modalScrollContainer: { paddingVertical: 40, paddingHorizontal: 20 },
+  modalScrollContainer: {
+    paddingVertical: Platform.OS === "ios" ? 50 : 60,
+    paddingHorizontal: 20,
+  },
   modalContent: {
     backgroundColor: "#FFFFFF",
     width: "100%",

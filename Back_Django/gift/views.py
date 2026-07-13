@@ -205,9 +205,7 @@ class EventDetailView(APIView):
         event.delete()
 
         return Response(
-            {
-                "message": f"'해당 이벤트가 성공적으로 삭제되었습니다."
-            },
+            {"message": f"'해당 이벤트가 성공적으로 삭제되었습니다."},
             status=status.HTTP_200_OK,
         )
 

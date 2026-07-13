@@ -394,9 +394,8 @@ export default function QuickRecommendScreen() {
             {isPending ? (
               <View style={styles.loadingRow}>
                 <Text style={styles.submitButtonText}>
-                  AI가 선물을 고르는 중...{" "}
+                  AI가 선물을 고르는 중...
                 </Text>
-
                 <SpinningGift />
               </View>
             ) : (
@@ -454,8 +453,8 @@ const styles = StyleSheet.create({
   },
   inputGroup: { marginBottom: Platform.OS === "ios" ? 36 : 28 },
   label: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: Platform.OS === "ios" ? 13 : 12.5,
+    fontWeight: "600",
     color: "#475569",
     marginBottom: 10,
     marginLeft: 2,
@@ -471,7 +470,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipSelected: { backgroundColor: "#FFECF0", borderColor: "#FF7096" },
-  chipText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
+  chipText: {
+    fontSize: Platform.OS === "ios" ? 13 : 12,
+    fontWeight: "600",
+    color: "#64748B",
+  },
   chipTextSelected: { color: "#FF7096", fontWeight: "700" },
   genderRow: { flexDirection: "row", gap: 10 },
   genderButton: {
@@ -485,7 +488,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   genderButtonSelected: { backgroundColor: "#FFECF0", borderColor: "#FF7096" },
-  genderText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
+  genderText: {
+    fontSize: Platform.OS === "ios" ? 13 : 12,
+    fontWeight: "600",
+    color: "#64748B",
+  },
   genderTextSelected: { color: "#FF7096", fontWeight: "700" },
   textInput: {
     backgroundColor: "#FFFFFF",
@@ -494,7 +501,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     height: 48,
-    fontSize: 14,
+    fontSize: Platform.OS === "ios" ? 13 : 12,
     color: "#334155",
     fontWeight: "500",
   },
@@ -515,7 +522,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   mbtiBtnSelected: { backgroundColor: "#FF7096" },
-  mbtiBtnText: { fontSize: 14, fontWeight: "700", color: "#94A3B8" },
+  mbtiBtnText: {
+    fontSize: Platform.OS === "ios" ? 13 : 12,
+    fontWeight: "700",
+    color: "#94A3B8",
+  },
   mbtiBtnTextSelected: { color: "#FFFFFF" },
   budgetContainer: {
     backgroundColor: "#F8FAFC",
@@ -532,9 +543,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  budgetLabel: { fontSize: 13, fontWeight: "700", color: "#64748B" },
+  budgetLabel: { fontSize: 12.5, fontWeight: "600", color: "#64748B" },
   budgetValueBadge: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "800",
     color: "#FF7096",
     backgroundColor: "#FFFFFF",

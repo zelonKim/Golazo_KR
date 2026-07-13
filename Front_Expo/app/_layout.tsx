@@ -61,7 +61,11 @@ function RootLayoutNav() {
       <KeyboardProvider>
         <APIProvider>
           <StatusBar style="dark" backgroundColor="#FFFFFF" />
-          <Stack>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: "modal" }} />
