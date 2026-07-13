@@ -87,6 +87,8 @@ class Event(models.Model):
     min_budget = models.PositiveIntegerField(verbose_name="최소 예산 (원)")
     max_budget = models.PositiveIntegerField(verbose_name="최대 예산 (원)")
 
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성 일시")
+
     def __str__(self):
         return f"{self.recipient.name} - {self.get_purpose_display()} "
 

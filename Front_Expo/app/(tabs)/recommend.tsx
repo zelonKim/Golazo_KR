@@ -98,11 +98,28 @@ export default function RecommendScreen() {
   });
 
   const handleCreateEvent = () => {
-    if (!selectedRecipientId || !eventPurpose || !minBudget || !maxBudget) {
-      Alert.alert(
-        "알림 🎀",
-        "상대방과 선물 목적, 예산 범위를 모두 입력해 주세요!",
-      );
+    if (!selectedRecipientId) {
+      Alert.alert("알림", "선물 상대방을 선택해 주세요.");
+      return;
+    }
+
+    if (!eventPurpose) {
+      Alert.alert("알림", "선물 목적을 선택해 주세요.");
+      return;
+    }
+
+    if (!minBudget) {
+      Alert.alert("알림", "최소 예산을 입력해 주세요.");
+      return;
+    }
+
+    if (!maxBudget) {
+      Alert.alert("알림", "최대 예산을 입력해 주세요.");
+      return;
+    }
+
+    if (minBudget > maxBudget) {
+      Alert.alert("알림", "최소 예산은 최대 예산보다 클 수 없습니다.");
       return;
     }
     createEventMutation.mutate({
@@ -110,6 +127,22 @@ export default function RecommendScreen() {
       min_budget: Number(minBudget),
       max_budget: Number(maxBudget),
     });
+  };
+
+  // 1. 숫자 또는 문자열을 천 단위 쉼표가 붙은 문자열로 변환 (화면 표시용)
+  const toDisplayValue = (value: number | string) => {
+    if (value === 0 || value === "0") return "";
+    const num = String(value).replace(/[^0-9]/g, ""); // 숫자만 남기기
+    return num ? Number(value).toLocaleString() : "";
+  };
+
+  // 2. 입력된 문자열에서 쉼표를 제거하고 최대 10,000,000 제한을 걸어 숫자로 변환 (State 저장용)
+  const toRawNumber = (text: string) => {
+    const cleanNumber = text.replace(/[^0-9]/g, ""); // 쉼표 및 문자 제거
+    if (!cleanNumber) return 0;
+
+    const num = Number(cleanNumber);
+    return num > 10000000 ? 10000000 : num; // 최대 1,000만 원까지만 허용
   };
 
   return (
@@ -168,7 +201,10 @@ export default function RecommendScreen() {
                   style={{ marginRight: 4 }}
                 />
                 <Text
-                  style={[styles.recipientBadgeText, { fontWeight: "900" }]}
+                  style={[
+                    styles.recipientBadgeText,
+                    { fontWeight: Platform.OS === "ios" ? "900" : "800" },
+                  ]}
                 >
                   지인 추가 +
                 </Text>
@@ -231,26 +267,30 @@ export default function RecommendScreen() {
             {/* 💰 인풋 3: 예산 범위 설정 */}
             <Text style={styles.inputLabel}>예산 범위 설정 (원 단위)</Text>
             <View style={styles.budgetRow}>
-              <View style={[styles.inputWrapper, { flex: 1 }]}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="최소 예산"
-                  placeholderTextColor="#AEAEB2"
-                  keyboardType="numeric"
-                  value={minBudget}
-                  onChangeText={setMinBudget}
-                />
-              </View>
-              <Text style={styles.budgetBetween}>~</Text>
-              <View style={[styles.inputWrapper, { flex: 1 }]}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="최대 예산"
-                  placeholderTextColor="#AEAEB2"
-                  keyboardType="numeric"
-                  value={maxBudget}
-                  onChangeText={setMaxBudget}
-                />
+              <View style={styles.budgetRow}>
+                <View style={[styles.inputWrapper, { flex: 1 }]}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="최소 예산"
+                    placeholderTextColor="#AEAEB2"
+                    keyboardType="number-pad" // 숫자 키패드만 나오도록 변경(iOS/안드로이드 공통 권장)
+                    value={toDisplayValue(minBudget)} // 숫자를 쉼표 문자열로 바꿔서 보여줌
+                    onChangeText={(text) => setMinBudget(toRawNumber(text))} // 숫자로만 정제해서 state 저장
+                  />
+                </View>
+
+                <Text style={styles.budgetBetween}>~</Text>
+
+                <View style={[styles.inputWrapper, { flex: 1 }]}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="최대 예산"
+                    placeholderTextColor="#AEAEB2"
+                    keyboardType="number-pad"
+                    value={toDisplayValue(maxBudget)} // 숫자를 쉼표 문자열로 바꿔서 보여줌
+                    onChangeText={(text) => setMaxBudget(toRawNumber(text))} // 숫자로만 정제해서 state 저장
+                  />
+                </View>
               </View>
             </View>
 

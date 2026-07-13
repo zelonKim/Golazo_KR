@@ -71,10 +71,17 @@ export default function HistoryScreen() {
   const events = React.useMemo(() => {
     if (!userProfile || !userProfile.recipients) return [];
 
-    // 유저가 가진 모든 지인들의 events 배열을 하나로 합침
-    return userProfile.recipients.flatMap(
+    // 1. 유저가 가진 모든 지인들의 events 배열을 하나로 합침
+    const flatEvents = userProfile.recipients.flatMap(
       (recipient: any) => recipient.events || [],
     );
+
+    // 2. 🔥 최신순 정렬 (created_at이 큰/최신 날짜가 맨 앞으로 오도록 정렬)
+    return [...flatEvents].sort((a: any, b: any) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA; // 내림차순 정렬 (최신순)
+    });
   }, [userProfile]);
 
   // 📊 대시보드용 통계 데이터 실시간 계산 (평탄화된 events 리스트 기반)

@@ -112,7 +112,6 @@ export default function LoginScreen() {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
 
-      // 최신 라이브러리 버전에 따라 데이터 구조가 userInfo.data.idToken 일 수 있습니다.
       const idToken = userInfo.idToken || userInfo.data?.idToken;
 
       if (idToken) {
@@ -270,6 +269,14 @@ export default function LoginScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+              <TouchableOpacity
+                style={styles.guestButton}
+                onPress={() => router.replace("/quickRecommend")}
+              >
+                <Text style={styles.guestButtonText}>
+                  로그인 없이 선물 추천받기
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -282,7 +289,12 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   // (기존 스타일 코드와 동일)
   container: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
+  content: {
+    flex: 1,
+    marginTop: 36,
+    paddingHorizontal: 24,
+    justifyContent: "center",
+  },
   welcomeSection: {
     marginBottom: 36,
     flexDirection: "column",
@@ -339,10 +351,10 @@ const styles = StyleSheet.create({
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: "#F2F2F7" },
   dividerText: {
-    fontSize: 12,
+    fontSize: Platform.OS === "ios" ? 14 : 13,
     color: "#AEAEB2",
     paddingHorizontal: 12,
-    fontWeight: "600",
+    fontWeight: Platform.OS === "ios" ? "600" : "500",
   },
   socialButtonRow: { flexDirection: "row", justifyContent: "center", gap: 20 },
   googleIcon: { width: 48, height: 48 },
@@ -358,5 +370,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#fb89a7",
     fontWeight: Platform.OS === "ios" ? "900" : "700",
+  },
+  guestButton: { marginTop: 16, alignItems: "center" },
+  guestButtonText: {
+    fontSize: Platform.OS === "ios" ? 12 : 11,
+    marginTop: 12,
+    fontWeight: Platform.OS === "ios" ? "600" : "500",
+    color: "#AEAEB2",
+    borderBottomWidth: 0.9,
+    borderBottomColor: "#AEAEB2",
+
+    // paddingBottom: Platform.OS === "ios" ? 0.1 : 0.1,
   },
 });

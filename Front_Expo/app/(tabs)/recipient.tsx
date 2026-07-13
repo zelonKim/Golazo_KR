@@ -646,7 +646,7 @@ export default function RecipientScreen() {
 
                   {/* 필드 5: 취미 */}
                   <Text style={[styles.inputLabel, { marginTop: 16 }]}>
-                    취미 (선택)
+                    취미 및 관심사 (선택)
                   </Text>
                   <View style={styles.inputWrapper}>
                     <TextInput

@@ -1,7 +1,7 @@
 import { client } from "@/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Gift, RefreshCw, ShoppingBag } from "lucide-react-native";
+import { ArrowLeft, CheckCircle, Gift, ShoppingBag } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
@@ -102,7 +102,7 @@ export default function RecommendResultScreen() {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: "#FFFBFB" }]}
-      edges={["top", "bottom"]}
+      edges={["top"]}
     >
       {/* 아기자기한 상단 헤더 */}
       <View style={styles.header}>
@@ -122,17 +122,22 @@ export default function RecommendResultScreen() {
         {/* ✨ 2. AI 분석 작동 제어 보드 (원래의 화이트 클라우드 카드 테마) */}
         <View style={styles.cloudCard}>
           <View style={styles.bubbleTag}>
-            <Text style={styles.bubbleTagText}>지인 맞춤형 추천 선물</Text>
+            <CheckCircle
+              size={13}
+              color={"#FF7096"}
+              style={{ marginRight: 5, marginTop: 3 }}
+            />
+            <Text style={styles.bubbleTagText}>AI pick Best Gift</Text>
           </View>
           <Text style={styles.mainCardTitle}>
             {recommendMutation.isPending
-              ? "선물 추천 중... ✨"
+              ? "선물을 고르는 중... 🤖"
               : "선물 추천 완료! 🥳"}
           </Text>
           <Text style={styles.mainCardSub}>
             {recommendMutation.isPending
-              ? "지인이 좋아할 만한 \n 최적의 선물을 고르고 있어요."
-              : `지인 정보와 예산 범위를 매칭해 \n 최적의 선물을 골라왔어요.`}
+              ? "상대가 좋아할 만한 선물을 고르고 있어요. \n 잠시만 기다려주세요. "
+              : `지인 정보와 예산 범위를 반영해 \n 최고의 선물을 골라왔어요.`}
           </Text>
 
           {/* 다시 추천받기 버튼 테마 일치화 */}
@@ -145,25 +150,29 @@ export default function RecommendResultScreen() {
               }}
             >
               <Text style={styles.cuteButtonText}>선물 다시 추천받기</Text>
-              <RefreshCw size={16} color="#FFF" style={{ marginLeft: 6 }} />
+              {/* <RefreshCw size={16} color="#FFF" style={{ marginLeft: 6 }} /> */}
             </TouchableOpacity>
           )}
         </View>
 
         {/* 3. 추천 결과 상품 리스트 영역 */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>
-            {" "}
-            <Gift size={20} color="#FF7096" style={{ marginLeft: 3 }} /> AI가
-            픽한 선물 리스트
-          </Text>
+          <View style={{ flexDirection: "row" }}>
+            <Gift
+              size={20}
+              color="#FF7096"
+              style={{
+                marginLeft: 6,
+                marginRight: 3,
+                marginTop: Platform.OS === "ios" ? 10.5 : 12,
+              }}
+            />
+            <Text style={styles.sectionTitle}>AI가 픽한 선물 리스트</Text>
+          </View>
 
           {recommendMutation.isPending ? (
             <View style={styles.loaderBox}>
               <ActivityIndicator size="small" color="#FF7096" />
-              <Text style={styles.loaderBoxText}>
-                AI가 선물을 고르고 있어요.. 🤖
-              </Text>
             </View>
           ) : displayItems.length > 0 ? (
             displayItems.map((item: RecommendedProduct) => (
@@ -207,12 +216,12 @@ export default function RecommendResultScreen() {
                     console.log("쿠팡 구매 URL:", item.product_url);
                   }}
                 >
-                  <Text style={styles.linkButtonText}>선물 구매하기 🎁</Text>
+                  <Text style={styles.linkButtonText}>🎁 선물 구매하기</Text>
                 </TouchableOpacity>
                 {/* 🌟 [추가] 쿠팡 파트너스 공정위 문구 배치 */}
-                <Text style={styles.coupangNotice}>
-                  ※ 쿠팡 파트너스 활동의 일환으로 구매 시 {"\n"} 일정액의
-                  수수료를 제공받습니다.
+                <Text style={styles.coupangNotice} numberOfLines={1}>
+                  ※ 쿠팡파트너스 활동의 일환으로 구매 시 소정의 수수료를
+                  제공받습니다.
                 </Text>
               </View>
             ))
@@ -231,7 +240,7 @@ export default function RecommendResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingBottom: 24 },
   header: {
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -249,7 +258,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     marginLeft: 12,
   },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16 },
   centerFlex: {
     flex: 1,
     justifyContent: "center",
@@ -284,6 +293,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 50,
     marginBottom: 12,
+    flexDirection: "row",
   },
   bubbleTagText: { fontSize: 11, fontWeight: "700", color: "#FF7096" },
   mainCardTitle: {
@@ -293,7 +303,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   mainCardSub: {
-    fontSize: 13,
+    fontSize: Platform.OS === "ios" ? 13 : 12,
     color: "#757580",
     textAlign: "center",
     marginTop: 8,
@@ -323,6 +333,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     color: "#2D2D3A",
+    marginTop: Platform.OS === "ios" ? 8 : 6,
     marginBottom: 16,
     paddingLeft: 2,
   },
@@ -332,7 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
     padding: 20,
-    marginBottom: 16,
+    marginBottom: 24,
     borderWidth: 1.5,
     borderColor: "#F6F6FA",
   },
@@ -372,10 +383,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   reasonText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: Platform.OS === "ios" ? 13 : 12,
+    fontWeight: Platform.OS === "ios" ? "500" : "400",
     color: "#5C5C62",
-    lineHeight: 18,
+    lineHeight: Platform.OS === "ios" ? 18 : 17,
   },
   linkButton: {
     flexDirection: "row",
@@ -383,10 +394,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 14,
     paddingVertical: 12,
-    backgroundColor: "#FFF0F3",
+
+    backgroundColor: "#FF7096",
+
     borderRadius: 16,
   },
-  linkButtonText: { fontSize: 14, fontWeight: "800", color: "#FF7096" },
+  linkButtonText: { fontSize: 14, fontWeight: "800", color: "white" },
 
   loaderBox: {
     padding: 30,
@@ -418,12 +431,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   coupangNotice: {
-    fontSize: Platform.OS === "ios" ? 10.5 : 10, // 버튼 밑에 들어가는 각주(Footnote) 느낌이 나도록 살짝 더 작게
+    fontSize: Platform.OS === "ios" ? 9 : 8, // 버튼 밑에 들어가는 각주(Footnote) 느낌이 나도록 살짝 더 작게
     color: "#868e96", // 은은한 회색조
     textAlign: "center", // 가운데 정렬
     marginTop: 8, // 구매하기 버튼과의 간격 (너무 떨어지지 않게 슬쩍 붙여줌)
     marginBottom: 4, // 상품 카드 맨 밑 테두리와의 여백
     lineHeight: 14,
-    paddingHorizontal: 15,
+    letterSpacing: -0.2,
   },
 });

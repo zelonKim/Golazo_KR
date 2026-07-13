@@ -245,9 +245,7 @@ export default function HomeScreen() {
               {/* 데이터가 있을 때: 상단 카드 + 다가오는 목록 노출 */}
               <View style={styles.cloudCard}>
                 <View style={styles.bubbleTag}>
-                  <Text style={styles.bubbleTagText}>
-                    곧 다가오는 특별한 날 🎉
-                  </Text>
+                  <Text style={styles.bubbleTagText}>곧 다가오는 특별한 날 🎉</Text>
                 </View>
 
                 <Text style={styles.mainCardTitle}>{mainDDay.content} </Text>
