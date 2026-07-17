@@ -3,7 +3,7 @@ from typing import List, Optional
 import os
 from dotenv import load_dotenv
 from schemas import RecommendRequest, RecommendResponse, RecommendListResponse
-from openai import OpenAI
+from openai import AsyncOpenAI
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -11,11 +11,11 @@ load_dotenv()
 
 app = FastAPI(title="선물 추천 AI 엔진")
 
-client = OpenAI()
+client = AsyncOpenAI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,12 +37,35 @@ async def get_recommendation(request: RecommendRequest):
             "대상자가 감동할 만한 가장 센스 있고 실용적인 선물 3가지를 추천해야 합니다."
         )
 
-        # 2. 유저가 입력한 상황 데이터 동적 바인딩 (User Prompt)
+        # 🎯 2. Django GENDER_CHOICES 스크린샷 기준 매핑 적용
+        gender_mapping = {
+            "M": "남성",
+            "F": "여성",
+            "N": "모름",
+        }
+        gender_str = gender_mapping.get(request.gender, "모름")
+
+        # 🎯 3. Django PURPOSE_CHOICES 스크린샷 기준 매핑 적용
+        purpose_mapping = {
+            "FRIEND_BDAY": "친구 생일",
+            "LOVER_BDAY": "애인 생일",
+            "PARENTS_BDAY": "부모님 생신",
+            "COUPLE_ANNIV": "커플 기념일",
+            "WED_ANNIV": "결혼 기념일",
+            "GRADUATE": "졸업",
+            "EMPLOY": "취업",
+            "HOUSE": "집들이",
+            "BIRTH": "출산",
+            "SELF_GIFT": "나에게 선물",
+        }
+        purpose_str = purpose_mapping.get(request.purpose, request.purpose)
+
+        # 4. 유저가 입력한 상황 데이터 동적 바인딩 (User Prompt)
         user_prompt = f"""
             [선물 대상자 및 상황 정보]
-            - 선물 목적: {request.purpose}
+            - 선물 목적: {purpose_str}
             - 나이대: {request.age_group}대
-            - 성별: {"남성" if request.gender == "M" else "여성" if request.gender == "F" else "모름"}
+            - 성별: {gender_str}
             - 필수 예산 범위: 최소 {request.min_budget:,}원 이상 ~ 최대 {request.max_budget:,}원 이하 (이 범위를 절대 벗어나면 안 됨)
             - MBTI: {request.mbti or "모름"}
             - 취미: {request.hobbies or "모름"}
@@ -67,8 +90,8 @@ async def get_recommendation(request: RecommendRequest):
 
             위 [선물 대상자 및 상황 정보]와 [주의 사항] 그리고, 필수 예산 범위를 완벽하게 충족하는 최적의 선물 3가지만 철저히 검증하여 추천해 주세요.
         """
-        # 3. OpenAI Chat Completion 호출 (Structured Outputs 적용)
-        response = client.beta.chat.completions.parse(
+
+        response = await client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             temperature=0.8,
             messages=[
