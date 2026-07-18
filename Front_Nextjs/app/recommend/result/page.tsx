@@ -168,7 +168,7 @@ export default function RecommendResultPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 max-w-sm mx-auto relative z-10">
             <button
               onClick={() =>
-                alert("구글플레이 심사 중입니다. 조금만 기다려주세요 🤗 ")
+                alert("8월초 출시 예정입니다. 조금만 기다려주세요🤗 ")
               }
               className="hover:scale-103"
             >
@@ -183,7 +183,7 @@ export default function RecommendResultPage() {
 
             <button
               onClick={() =>
-                alert("앱스토어 심사 중입니다. 조금만 기다려주세요 🤗 ")
+                alert("8월초 출시 예정입니다. 조금만 기다려주세요🤗 ")
               }
               className="hover:scale-103"
             >
